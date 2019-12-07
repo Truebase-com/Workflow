@@ -1,0 +1,12 @@
+{
+	"extends": "../../tsconfig.standard.json",
+	"compilerOptions": {
+		"outFile": "../build/moduless.tunnel.js"
+	},
+	"include": [
+		"**/*.ts"
+	],
+	"references": [
+		{ "path": "../common" }
+	]
+}

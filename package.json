@@ -1,0 +1,13 @@
+{
+	"name": "truebase-workflow",
+	"version": "1.0.0",
+	"author": "Truebase",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/Truebase-com/Workflow.git"
+	},
+	"bugs": {
+		"url": "https://github.com/Truebase-com/Workflow/issues"
+	}
+}

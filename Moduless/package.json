@@ -1,0 +1,59 @@
+{
+	"name": "moduless",
+	"description": "A tool to support debugging module-free TypeScript composite projects.",
+	"author": "Truebase",
+	"license": "MIT",
+	"version": "2.0.0",
+	"engines": {
+		"vscode": "^1.4.0"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/Truebase-com/Moduless"
+	},
+	"bugs": {
+		"url": "https://github.com/Truebase-com/Moduless/issues"
+	},
+	"keywords": [
+		"typescript",
+		"moduless",
+		"debugger",
+		"extension"
+	],
+	"main": "build/moduless.js",
+	"scripts": {
+		"publish": "makets publish",
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -p tsconfig.json",
+		"watch": "tsc -watch -p ./tsconfig.watch.json",
+		"postinstall": "node ./node_modules/vscode/bin/install",
+		"test": "npm run compile && node ./node_modules/vscode/bin/test"
+	},
+	"devDependencies": {
+		"@types/node": "^12.7.12",
+		"@types/vscode": "^1.40.0",
+		"@types/ws": "^6.0.4",
+		"typescript": "^3.7.2"
+	},
+	"dependencies": {
+		"meriyah": "^1.9.3",
+		"ws": "^7.2.0"
+	},
+	"activationEvents": [
+		"*"
+	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "moduless.try",
+				"title": "Run a moduless case"
+			}
+		],
+		"views": {
+			"debug": [{
+				"id": "modulessCases",
+				"name": "Cases"
+			}]
+		}
+	}
+}

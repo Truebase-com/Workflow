@@ -1,0 +1,9 @@
+{
+	"extends": "../../tsconfig.standard.json",
+	"compilerOptions": {
+		"outFile": "../build/moduless.common.js",
+	},
+	"include": [
+		"**/*.ts"
+	]
+}

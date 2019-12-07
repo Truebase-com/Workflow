@@ -1,0 +1,10 @@
+{
+	"files": [],
+	"include": [],
+	"references": [
+		{ "path": "./core" },
+		{ "path": "./common" },
+		{ "path": "./coverage" },
+		{ "path": "./tunnel" }
+	]
+}
