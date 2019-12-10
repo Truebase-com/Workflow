@@ -2,6 +2,7 @@
 	"name": "moduless",
 	"description": "A tool to support debugging module-free TypeScript composite projects.",
 	"author": "Truebase",
+	"icon": "icon.png",
 	"license": "MIT",
 	"version": "2.0.0",
 	"engines": {
@@ -31,12 +32,14 @@
 	},
 	"devDependencies": {
 		"@types/node": "^12.7.12",
+		"@types/puppeteer": "^2.0.0",
 		"@types/vscode": "^1.40.0",
 		"@types/ws": "^6.0.4",
 		"typescript": "^3.7.2"
 	},
 	"dependencies": {
 		"meriyah": "^1.9.3",
+		"puppeteer": "^2.0.0",
 		"ws": "^7.2.0"
 	},
 	"activationEvents": [
@@ -45,15 +48,119 @@
 	"contributes": {
 		"commands": [
 			{
-				"command": "moduless.try",
-				"title": "Run a moduless case"
+				"command": "moduless.set-browser-visible",
+				"title": "Set debugging in a visible browser",
+				"icon": "icons/browser-on.png",
+				"enablement": "!browserVisible"
+			},
+			{
+				"command": "moduless.set-browser-invisible",
+				"title": "Set debugging in an invisible browser",
+				"icon": "icons/browser-off.png",
+				"enablement": "browserVisible"
+			},
+			{
+				"command": "moduless.set-devtools-visible",
+				"title": "Set devtools to display by default in the debug browser",
+				"icon": "icons/devtools-on.png",
+				"enablement": "!devtoolsVisible"
+			},
+			{
+				"command": "moduless.set-devtools-invisible",
+				"title": "Set devtools to not display by default in the debug browser",
+				"icon": "icons/devtools-off.png",
+				"enablement": "devtoolsVisible"
+			},
+			{
+				"command": "moduless.start",
+				"title": "Starts the moduless debugging session",
+				"icon": "icons/start.png",
+				"category": "Debug",
+				"enablement": "!inDebugMode"
+			},
+			{
+				"command": "moduless.stop",
+				"title": "Stops the moduless debugging session",
+				"icon": "icons/stop.png",
+				"category": "Debug",
+				"enablement": "inDebugMode"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "moduless.set-browser-visible",
+					"group": "navigation",
+					"when": "view == moduless.covers && !browserVisible"
+				},
+				{
+					"command": "moduless.set-browser-invisible",
+					"group": "navigation",
+					"when": "view == moduless.covers && browserVisible"
+				},
+				{
+					"command": "moduless.set-devtools-visible",
+					"group": "navigation",
+					"when": "view == moduless.covers && !devtoolsVisible"
+				},
+				{
+					"command": "moduless.set-devtools-invisible",
+					"group": "navigation",
+					"when": "view == moduless.covers && devtoolsVisible"
+				},
+				{
+					"command": "moduless.start",
+					"group": "navigation",
+					"when": "view == moduless.covers && !inDebugMode"
+				},
+				{
+					"command": "moduless.stop",
+					"group": "navigation",
+					"when": "view == moduless.covers && inDebugMode"
+				}
+			],
+			"commandPalette": [
+				{
+					"command": "moduless.start"
+				},
+				{
+					"command": "moduless.stop"
+				},
+				{
+					"command": "moduless.set-browser-visible"
+				},
+				{
+					"command": "moduless.set-browser-invisible"
+				},
+				{
+					"command": "moduless.set-devtools-visible"
+				},
+				{
+					"command": "moduless.set-devtools-invisible"
+				}
+			]
+		},
+		"keybindings": [
+			{
+				"command": "moduless.start",
+				"key": "F5",
+				"mac": "F5",
+				"when": "editorTextFocus && !inDebugMode"
+			},
+			{
+				"command": "moduless.stop",
+				"key": "F5",
+				"mac": "F5",
+				"when": "editorTextFocus && inDebugMode"
 			}
 		],
 		"views": {
-			"debug": [{
-				"id": "modulessCases",
-				"name": "Cases"
-			}]
+			"test": [
+				{
+					"id": "moduless.covers",
+					"name": "Moduless Cover Functions"
+				}
+			]
 		}
 	}
 }

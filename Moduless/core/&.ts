@@ -5,6 +5,7 @@ const Http = <typeof import("http")>require("http");
 const Path: typeof import("path") = require("path");
 const Url = <typeof import("url")>require("url");
 const Ws = <typeof import("ws")>require("ws");
+const Pup = <typeof import("puppeteer")>require("puppeteer");
 
 declare module Vs
 {
@@ -15,6 +16,7 @@ declare module Vs
 	export type Event<T> = import("vscode").Event<T>;
 	export type TreeItem = import("vscode").TreeItem;
 	export type TreeItemCollapsibleState = import("vscode").TreeItemCollapsibleState;
+	
 	export type Command = import("vscode").Command;
 	export type TextEditor = import("vscode").TextEditor;
 	export type TextDocument = import("vscode").TextDocument;
@@ -22,6 +24,14 @@ declare module Vs
 	export type TextEditorDecorationType = import("vscode").TextEditorDecorationType;
 	export type Uri = import("vscode").Uri;
 	export type OverviewRulerLane = import("vscode").OverviewRulerLane;
+	
+	export type Task = import("vscode").Task;
+	export type TaskProvider = import("vscode").TaskProvider;
+	export type TaskDefinition = import("vscode").TaskDefinition;
+	export type Pseudoterminal = import("vscode").Pseudoterminal;
+	export type TerminalDimensions = import("vscode").TerminalDimensions;
+	export type FileSystemWatcher = import("vscode").FileSystemWatcher;
+	export type Disposable = import("vscode").Disposable;
 }
 
 declare module Http
@@ -39,18 +49,39 @@ declare module Ws
 	export type Server = import("ws").Server;
 }
 
+declare module Pup
+{
+	export type Browser = import("puppeteer").Browser;
+	export type BrowserContext = import("puppeteer").BrowserContext;
+	export type Page = import("puppeteer").Page;
+}
+
 const enum Constants
 {
 	/**
-	 * 
+	 * The prefix that all cover functions must have in their name
+	 * in order to be discovered by the moduless cover system.
 	 */
-	tryCommand = "moduless.try",
+	prefix = "cover"
+}
+
+const enum Commands
+{
+	start = "moduless.start",
+	stop = "moduless.stop",
 	
-	/**
-	 * The prefix that all case functions must have in their name
-	 * in order to be discovered by the moduless case system.
-	 */
-	prefix = "case"
+	setBrowserVisible = "moduless.set-browser-visible",
+	setBrowserInvisible = "moduless.set-browser-invisible",
+	
+	setDevtoolsVisible = "moduless.set-devtools-visible",
+	setDevtoolsInvisible = "moduless.set-devtools-invisible"
+}
+
+const enum Contexts
+{
+	debugging = "debugging",
+	browserVisible = "browserVisible",
+	devtoolsVisible = "devtoolsVisible"
 }
 
 namespace Moduless

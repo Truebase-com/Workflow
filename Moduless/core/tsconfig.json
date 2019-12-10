@@ -1,7 +1,7 @@
 {
 	"extends": "../../tsconfig.standard.json",
 	"compilerOptions": {
-		"outFile": "../build/moduless.core.js"
+		"outFile": "../build/moduless.js"
 	},
 	"include": [
 		"**/*.ts"

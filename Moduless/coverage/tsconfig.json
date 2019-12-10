@@ -1,7 +1,7 @@
 {
 	"extends": "../../tsconfig.standard.json",
 	"compilerOptions": {
-		"outFile": "../build/moduless.cases.js",
+		"outFile": "../build/moduless.coverage.js",
 	},
 	"include": [
 		"**/*.ts"

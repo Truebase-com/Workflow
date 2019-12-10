@@ -2,22 +2,31 @@
 namespace Moduless
 {
 	/** */
-	export class AddCaseMessage extends Message
+	export class AddCoverMessage extends Message
 	{
 		constructor(
 			readonly project: Project,
-			readonly caseFunctionName: string,
-			readonly caseIndex: number)
+			readonly coverFunctionName: string,
+			readonly coverIndex: number)
 		{ super(); }
 	}
 	
 	/** */
-	export class RemoveCaseMessage extends Message
+	export class RemoveCoverMessage extends Message
 	{
 		constructor(
 			readonly project: Project,
-			readonly caseFunctionName: string,
-			readonly caseIndex: number)
+			readonly coverFunctionName: string,
+			readonly coverIndex: number)
+		{ super(); }
+	}
+	
+	/** */
+	export class SelectCoverMessage extends Message
+	{
+		constructor(
+			readonly projectPath: string,
+			readonly coverFunctionName: string)
 		{ super(); }
 	}
 	

@@ -21,9 +21,9 @@ namespace Moduless
 	}
 	
 	/** */
-	export type CaseChangedFn = (
+	export type CoverChangedFn = (
 		project: Project,
-		caseFunctionName: string,
+		coverFunctionName: string,
 		index: number) => void;
 	
 	/**
@@ -42,7 +42,7 @@ namespace Moduless
 			 */
 			readonly name: string,
 			/**
-			 * Stores the fully qualified path to the file specified in the
+			 * Stores the fully qualified path and file name of the file specified in the
 			 * .fileName field.
 			 */
 			readonly filePath: string,
@@ -69,6 +69,7 @@ namespace Moduless
 			private readonly bus: MessageBus)
 		{
 			this.fileName = Path.basename(filePath);
+			this.folder =  Path.dirname(filePath);
 			
 			if (outFile)
 			{
@@ -77,10 +78,13 @@ namespace Moduless
 				
 				bus.listen(InitializeMessage, () =>
 				{
-					for (const [i, caseName] of this.caseFunctionNames.entries())
-						this.bus.emit(new AddCaseMessage(this, caseName, i));
+					for (const [i, coverName] of this.coverFunctionNames.entries())
+						this.bus.emit(new AddCoverMessage(this, coverName, i));
 				});
 			}
+			
+			if (!name && outFile)
+				this.name = outFile.replace(/\.js$/, "");
 		}
 		
 		/**
@@ -88,6 +92,11 @@ namespace Moduless
 		 * Typically stores something like "tsconfig.json".
 		 */
 		readonly fileName: string;
+		
+		/**
+		 * Stores the fully qualified folder path of the project.
+		 */
+		readonly folder: string;
 		
 		/**
 		 * Returns an array that contains all nested script references
@@ -151,21 +160,21 @@ namespace Moduless
 		 */
 		private onOutFileChange()
 		{
-			const existingCaseNames = this.caseFunctionNames.slice();
+			const existingCoverNames = this.coverFunctionNames.slice();
 			this.updateProjectCode();
 			
 			const steps = Moduless.calculateMigrationSteps(
-				existingCaseNames,
-				this.caseFunctionNames);
+				existingCoverNames,
+				this.coverFunctionNames);
 			
 			for (const idx of steps.indexesToDelete)
-				this.bus.emit(new RemoveCaseMessage(
+				this.bus.emit(new RemoveCoverMessage(
 					this, 
-					existingCaseNames[idx],
+					existingCoverNames[idx],
 					idx));
 			
 			for (const { index, item } of steps.itemsToAdd)
-				this.bus.emit(new AddCaseMessage(
+				this.bus.emit(new AddCoverMessage(
 					this,
 					item,
 					index));
@@ -174,8 +183,8 @@ namespace Moduless
 		}
 		
 		/**
-		 * Instruments the specified body of source code so that case functions
-		 * are detected and added to the global case repository.
+		 * Instruments the specified body of source code so that cover functions
+		 * are detected and added to the global cover repository.
 		 */
 		private updateProjectCode()
 		{
@@ -210,7 +219,7 @@ namespace Moduless
 				identifierPattern: true
 			});
 			
-			const caseFunctions: ESTree.FunctionDeclaration[] = [];
+			const coverFunctions: ESTree.FunctionDeclaration[] = [];
 			
 			const recurseAst = (node: ESTree.Node) =>
 			{
@@ -219,7 +228,7 @@ namespace Moduless
 				
 				if (node.type === "FunctionDeclaration")
 					if (new RegExp(`^${Constants.prefix}[A-Z]`).test(node.id?.name || ""))
-						caseFunctions.push(node);
+						coverFunctions.push(node);
 				
 				for (const value of Object.values(node))
 				{
@@ -236,7 +245,7 @@ namespace Moduless
 				recurseAst(node);
 			
 			const splits: { position: number; functionName: string; }[] = [];
-			for (const decl of caseFunctions)
+			for (const decl of coverFunctions)
 			{
 				const functionName = decl.id?.name;
 				if (!functionName)
@@ -255,14 +264,14 @@ namespace Moduless
 			{
 				const { position, functionName } = splits[i];
 				const sourceChunk = originalCode.slice(lastPosition, position);
-				const injectChunk = `;Moduless.addCase(${functionName});`;
+				const injectChunk = `;Moduless.addCover(${functionName});`;
 				outChunks.push(sourceChunk, injectChunk);
 				lastPosition = position;
 			}
 			
 			outChunks.push(originalCode.slice(lastPosition));
 			this._instrumentedCode = outChunks.join("");
-			this._caseFunctionNames = splits.map(v => v.functionName);
+			this._coverFunctionNames = splits.map(v => v.functionName);
 		}
 		
 		/** */
@@ -273,10 +282,10 @@ namespace Moduless
 		private _instrumentedCode: string = "";
 		
 		/** */
-		get caseFunctionNames()
+		get coverFunctionNames()
 		{
-			return this._caseFunctionNames;
+			return this._coverFunctionNames;
 		}
-		private _caseFunctionNames: string[] = [];
+		private _coverFunctionNames: string[] = [];
 	}
 }

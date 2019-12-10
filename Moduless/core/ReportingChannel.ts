@@ -8,12 +8,12 @@ namespace Moduless
 		{
 			const channel = Vs.window.createOutputChannel("Moduless");
 			
-			bus.listen(StartCaseMessage, msg =>
+			bus.listen(StartCoverMessage, msg =>
 			{
 				channel.clear();
 			});
 			
-			bus.listen(EndCaseMessage, msg =>
+			bus.listen(EndCoverMessage, msg =>
 			{
 				channel.show(true);
 				
@@ -22,19 +22,19 @@ namespace Moduless
 				if (msg.exceptionDescription)
 				{
 					lines.push(
-						"ERROR: " + msg.caseName,
+						"ERROR: " + msg.coverName,
 						"\t" + msg.exceptionDescription,
 						...msg.exceptionStack.map(v => "\t\t" + v)
 					);
 				}
 				else if (msg.verifications.every(v => v.pass))
 				{
-					lines.push("PASS: " + msg.caseName);
+					lines.push("PASS: " + msg.coverName);
 				}
 				else
 				{
 					lines.push(
-						"FAIL: " + msg.caseName,
+						"FAIL: " + msg.coverName,
 						...msg.verifications.map(v => `\t${v.pass ? "√" : "✗:"} ${v.expression}`)
 					);
 				}

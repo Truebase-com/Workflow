@@ -2,15 +2,31 @@
 namespace Moduless
 {
 	/**
-	 * 
+	 * A long-lived class that deals with executing cover functions.
 	 */
-	export class Server
+	export class ExecutionService
 	{
 		constructor(
 			private readonly projectGraph: ProjectGraph,
 			private readonly bus: MessageBus)
 		{
-			this.httpServer = Http.createServer((req, res) =>
+			this.httpServer = this.setupHttpServer();
+			this.wsServer = this.setupSocketServer();
+			this.setupPuppeteerListeners();
+		}
+		
+		/** */
+		dispose()
+		{
+			this.stopDebugging();
+		}
+		
+		//# HTTP and Socket Server Members
+		
+		/** */
+		private setupHttpServer()
+		{
+			const httpServer = Http.createServer((req, res) =>
 			{
 				const urlParsed = Url.parse(req.url || "");
 				const query = urlParsed.query;
@@ -63,23 +79,28 @@ namespace Moduless
 				res.end();
 			});
 			
-			this.httpServer.listen(this.httpPort);
+			httpServer.listen(this.httpPort);
 			console.log("Moduless HTTP server listening on port: " + this.httpPort);
-			
-			this.wsServer = new Ws.Server({ port: this.wsPort });
-			this.wsServer.on("connection", ws =>
+			return httpServer;
+		}
+		
+		/** */
+		private setupSocketServer()
+		{
+			const wsServer = new Ws.Server({ port: this.wsPort });
+			wsServer.on("connection", ws =>
 			{
 				ws.on("message", socketData =>
 				{
 					const message = Message.parse(socketData.toString());
-					bus.emit(message);
+					this.bus.emit(message);
 				});
 			});
 			
-			bus.listen(StartCaseMessage, msg => this.broadcastViaSocket(msg));
-			bus.listen(ReloadMessage, msg => this.broadcastViaSocket(msg));
+			this.bus.listen(ReloadMessage, msg => this.broadcastViaSocket(msg));
 			
 			console.log("Moduless WebSocket server listening on port: " + this.wsPort);
+			return wsServer;
 		}
 		
 		/** */
@@ -188,7 +209,7 @@ namespace Moduless
 			
 			const tunnelFilePath = require.resolve("./" + this.standardFiles.tunnel);
 			const tunnelScript = Fs.readFileSync(tunnelFilePath, "utf8")
-				.replace(/\s__port__\s=\s\d+;/, ` __wsPort__ = ${this.wsPort};`);
+				.replace(/\s__wsPort__\s=\s\d+;/, ` __wsPort__ = ${this.wsPort};`);
 			
 			return this.tunnelScript = tunnelScript;
 		}
@@ -212,9 +233,161 @@ namespace Moduless
 				return;
 			}
 			
-			const messageText = message.serialize();
+			const messageText = message.toString();
 			for (const client of this.wsServer.clients)
 				client.send(messageText);
 		}
+		
+		//# Puppeteer Members
+		
+		/** */
+		private setupPuppeteerListeners()
+		{
+			Extension.setContext(Contexts.debugging, false);
+			
+			this.isBrowserShown = true;
+			this.isDevtoolsShown = false;
+			
+			Vs.debug.onDidTerminateDebugSession(e =>
+			{
+				this.stopDebugging();
+			});
+			
+			this.bus.listen(StartCoverMessage, async msg =>
+			{
+				const project = this.projectGraph.find(msg.projectPath);
+				if (!project)
+					throw new Error("Unknown project: " + msg.projectPath);
+				
+				const url = this.getDebugUrl(project);
+				
+				if (!this.activeBrowser)
+					await this.maybeStartBrowser(url);
+				
+				await this.maybeStartDebugging(url);
+				this.broadcastViaSocket(msg);
+			});
+			
+			this.bus.listen(WindowMetricsMessage, async msg =>
+			{
+				GlobalState.set("metrics", msg);
+			});
+			
+			// We can expose the entire Puppeteer API to the browser 
+			// by looping through the activePage object and adding functions
+			// that look like this:
+			// this.activePage!.exposeFunction("??", (...args: any[]) => { });
+		}
+		
+		/**
+		 * 
+		 */
+		private async maybeStartBrowser(url: string)
+		{
+			if (this.activeBrowser)
+				return;
+			
+			let w = 1024;
+			let h = 768;
+			let x = 0;
+			let y = 0;
+			
+			const wmmText = await GlobalState.get("metrics");
+			if (wmmText)
+			{
+				const msg = Message.parse<WindowMetricsMessage>(wmmText);
+				[w, h, x, y] = [msg.width, msg.height, msg.screenX, msg.screenY];
+			}
+			
+			this.activeBrowser = await Pup.launch({
+				headless: !this._isBrowserShown,
+				devtools: this._isDevtoolsShown,
+				defaultViewport: null,
+				args: [
+					`--remote-debugging-port=9222`,
+					`--window-size=${w},${h}`,
+					`--window-position=${x},${y}`
+				]
+			});
+			
+			const page = (await this.activeBrowser.pages())[0];
+			await page.goto(url);
+			this.activePage = page;
+		}
+		
+		/**
+		 * 
+		 */
+		private async maybeStartDebugging(url: string)
+		{
+			await Vs.debug.startDebugging(
+				undefined,
+				{
+					name: "Reflex ML (Puppeteer)",
+					type: "chrome",
+					request: "attach",
+					port: 9222,
+					url,
+					webRoot: "${workspaceRoot}",
+					timeout: 30000,
+					smartStep: true,
+					sourceMaps: true
+				}
+			);
+			
+			Extension.setContext(Contexts.debugging, true);
+		}
+		
+		/** */
+		private getDebugUrl(project: Project)
+		{
+			return `http://localhost:${this.httpPort}/??` + project.folder;
+		}
+		
+		private activeBrowser: Pup.Browser | null = null;
+		private activePage: Pup.Page | null = null;
+		
+		/** */
+		private stopDebugging()
+		{
+			Extension.setContext(Contexts.debugging, false);
+			
+			if (this.activeBrowser)
+			{
+				this.activeBrowser.close();
+				this.activeBrowser = null;
+				this.activePage = null;
+			}
+		}
+		
+		/**
+		 * Gets or sets whether a browser should
+		 * display when a debugging session starts.
+		 */
+		get isBrowserShown()
+		{
+			return this._isBrowserShown;
+		}
+		set isBrowserShown(value: boolean)
+		{
+			this._isBrowserShown = value;
+			Extension.setContext(Contexts.browserVisible, value);
+		}
+		private _isBrowserShown = false;
+		
+		/**
+		 * Gets or sets whether the devtools panel should display
+		 * in the browser when a debugging session starts.
+		 */
+		get isDevtoolsShown()
+		{
+			return this._isDevtoolsShown;
+		}
+		set isDevtoolsShown(value: boolean)
+		{
+			this._isDevtoolsShown = value;
+			Extension.setContext(Contexts.devtoolsVisible, value);
+		}
+		private _isDevtoolsShown = false;
 	}
 }

@@ -23,7 +23,7 @@ namespace Moduless
 		 * The format of the message array is expected to be:
 		 * ["MessageConstructorName", ...messageConstructorArguments]
 		 */
-		static parse(messageJsonText: string)
+		static parse<T extends Message = Message>(messageJsonText: string): T
 		{
 			const messageJsonTextAdjust = messageJsonText
 				.replace(new RegExp(JsValue.undefined, "gm"), "undefined")
@@ -47,14 +47,14 @@ namespace Moduless
 				throw new Error(`Constructor for ${ctorName} expects ${ctor.length} ` +
 					`arguments, but ${ctorArgs.length} were specified.`);
 			
-			return new ctor(...ctorArgs);
+			return new ctor(...ctorArgs) as any;
 		}
 		
 		/**
 		 * Converts this message into a string representation so
 		 * that it may be sent though a WebSocket connection.
 		 */
-		serialize()
+		toString()
 		{
 			const ctorName = this.constructor.name;
 			return JSON.stringify([ctorName, ...Object.values(this)], (key, value) =>
@@ -65,48 +65,5 @@ namespace Moduless
 					value;
 			});
 		}
-	}
-	
-	/** */
-	export class ReloadMessage extends Message { }
-	
-	/** */
-	export class StartCaseMessage extends Message
-	{
-		constructor(
-			readonly caseName: string)
-		{ super(); }
-	}
-	
-	/** */
-	export class EndCaseMessage extends Message
-	{
-		constructor(
-			/**
-			 * The name of the case function that was executed.
-			 */
-			readonly caseName: string,
-			/**
-			 * A string containing any exception message that was generated
-			 * as a result of running the case.
-			 */
-			readonly exceptionDescription: string,
-			/**
-			 * A string array containing the entries of the stack trace of any
-			 * exception that was generated as a result of running this case.
-			 */
-			readonly exceptionStack: string[],
-			/**
-			 * 
-			 */
-			readonly verifications: IVerificationResult[])
-		{ super(); }
-	}
-	
-	/** */
-	export interface IVerificationResult
-	{
-		readonly expression: string;
-		readonly pass: boolean;
 	}
 }

@@ -2,7 +2,7 @@
 namespace Moduless
 {
 	/** */
-	export class CaseDecorators
+	export class CoverDecorationService
 	{
 		constructor()
 		{
@@ -11,9 +11,9 @@ namespace Moduless
 				isWholeLine: true
 			});
 			
+			Vs.window.onDidChangeVisibleTextEditors(e => e.map(v => this.decorate(v.document)));
 			Vs.workspace.onDidChangeTextDocument(ev => this.decorate(ev.document));
 			Vs.workspace.onDidOpenTextDocument(textDoc => this.decorate(textDoc));
-			Vs.window.onDidChangeVisibleTextEditors(e => e.map(v => this.decorate(v.document)));
 			Vs.workspace.textDocuments.map(doc => this.decorate(doc));
 		}
 		
@@ -30,26 +30,28 @@ namespace Moduless
 				return;
 			
 			const sourceCode = editor.document.getText();
-			const regex = /((async )?function case[A-Za-z]+\(\))/;
 			const decorationsArray: Vs.DecorationOptions[] = [];
 			const sourceCodeArr = sourceCode.split("\n");
 			
-			for (let line = 0; line < sourceCodeArr.length; line++)
+			for (let lineNum = 0; lineNum < sourceCodeArr.length; lineNum++)
 			{
-				let match = sourceCodeArr[line].match(regex);
+				const regex = new RegExp(`((async )?function ${Constants.prefix}[A-Z][A-Za-z]+\(\))`);
+				
+				const lineText = sourceCodeArr[lineNum];
+				let match = lineText.match(regex);
 				
 				if (match !== null && match.index !== undefined)
 				{
 					const range = new Vs.Range(
-						new Vs.Position(line, match.index),
-						new Vs.Position(line, match.index + match[1].length + 10000)
+						new Vs.Position(lineNum, match.index),
+						new Vs.Position(lineNum, match.index + match[1].length + 10000)
 					);
 					
 					const decoration: Vs.DecorationOptions = {
 						range,
 						renderOptions: {
 							after: {
-								contentText: "	Case function",
+								contentText: "	Cover function",
 								color: "rgba(0, 0, 0, 0.18)",
 								fontStyle: "italic"
 							}

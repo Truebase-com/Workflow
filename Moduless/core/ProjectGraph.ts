@@ -176,19 +176,19 @@ namespace Moduless
 	/**
 	 * 
 	 */
-	export class CaseInstance
+	export class CoverInstance
 	{
 		constructor(
 			readonly relatedProject: Project,
-			readonly caseFunctionName: string)
+			readonly coverFunctionName: string)
 		{ }
 	}
 	
 	/** */
-	export class CaseChangeInfo
+	export class CoverChangeInfo
 	{
 		constructor(
-			readonly caseInstance: CaseInstance,
+			readonly coverInstance: CoverInstance,
 			readonly added: boolean,
 			readonly fixtureName: string,
 			readonly functionName: string) { }
