@@ -50,38 +50,56 @@
 			{
 				"command": "moduless.set-browser-visible",
 				"title": "Set debugging in a visible browser",
-				"icon": "icons/browser-on.png",
+				"icon": {
+					"light": "icons/browser-off-light.png",
+					"dark": "icons/browser-off-dark.png"
+				},
 				"enablement": "!browserVisible"
 			},
 			{
 				"command": "moduless.set-browser-invisible",
 				"title": "Set debugging in an invisible browser",
-				"icon": "icons/browser-off.png",
+				"icon": {
+					"light": "icons/browser-on-light.png",
+					"dark": "icons/browser-on-dark.png"
+				},
 				"enablement": "browserVisible"
 			},
 			{
 				"command": "moduless.set-devtools-visible",
 				"title": "Set devtools to display by default in the debug browser",
-				"icon": "icons/devtools-on.png",
+				"icon": {
+					"light": "icons/devtools-off-light.png",
+					"dark": "icons/devtools-off-dark.png"
+				},
 				"enablement": "!devtoolsVisible"
 			},
 			{
 				"command": "moduless.set-devtools-invisible",
 				"title": "Set devtools to not display by default in the debug browser",
-				"icon": "icons/devtools-off.png",
+				"icon": {
+					"light": "icons/devtools-on-light.png",
+					"dark": "icons/devtools-on-dark.png"
+				},
 				"enablement": "devtoolsVisible"
 			},
 			{
 				"command": "moduless.start",
 				"title": "Starts the moduless debugging session",
-				"icon": "icons/start.png",
+				"icon": {
+					"light": "icons/start-light.png",
+					"dark": "icons/start-dark.png"
+				},
 				"category": "Debug",
 				"enablement": "!inDebugMode"
 			},
 			{
 				"command": "moduless.stop",
 				"title": "Stops the moduless debugging session",
-				"icon": "icons/stop.png",
+				"icon": {
+					"light": "icons/stop-light.png",
+					"dark": "icons/stop-dark.png"
+				},
 				"category": "Debug",
 				"enablement": "inDebugMode"
 			}

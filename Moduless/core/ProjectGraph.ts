@@ -147,18 +147,34 @@ namespace Moduless
 		 * Finds a Project object that relates to the specfied path.
 		 * The path parameter may be the path to a tsconfig file,
 		 * or it may be the path to an outFile specified within the 
-		 * Project's tsconfig.
+		 * Project's tsconfig, or it may refer to a TypeScript or
+		 * JavaScript file nested within a project folder.
 		 */
-		find(path: string)
+		find(filePath: string)
 		{
-			const targetProjectConfig = this.resolveReference("", path);
+			const targetProjectConfig = this.resolveReference("", filePath);
 			const projectViaConfig = this.projects.get(targetProjectConfig);
 			if (projectViaConfig)
 				return projectViaConfig;
 			
-			for (const project of this.projects.values())
-				if (project.outFile === path)
+			const projectEntries = Array.from(this.projects.entries())
+			
+			for (const [path, project] of projectEntries)
+				if (project.outFile === filePath)
 					return project;
+			
+			const ext = Path.extname(filePath);
+			if (ext === ".ts" || ext === ".js")
+			{
+				const inputDir = Path.dirname(filePath) + "/";
+				const projectPaths = projectEntries
+					.map(v => v[0])
+					.sort((a, b) => b.length - a.length);
+				
+				for (const projectPath of projectPaths)
+					if (projectPath.startsWith(inputDir))
+						return this.projects.get(projectPath) || null;
+			}
 			
 			return null;
 		}

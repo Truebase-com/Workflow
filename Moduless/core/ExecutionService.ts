@@ -241,13 +241,8 @@ namespace Moduless
 		//# Puppeteer Members
 		
 		/** */
-		private setupPuppeteerListeners()
+		private async setupPuppeteerListeners()
 		{
-			Extension.setContext(Contexts.debugging, false);
-			
-			this.isBrowserShown = true;
-			this.isDevtoolsShown = false;
-			
 			Vs.debug.onDidTerminateDebugSession(e =>
 			{
 				this.stopDebugging();
@@ -255,22 +250,17 @@ namespace Moduless
 			
 			this.bus.listen(StartCoverMessage, async msg =>
 			{
-				const project = this.projectGraph.find(msg.projectPath);
+				const project = this.projectGraph.find(msg.containingFilePath);
 				if (!project)
-					throw new Error("Unknown project: " + msg.projectPath);
+					throw new Error("No project contains the file: " + msg.containingFilePath);
 				
-				const url = this.getDebugUrl(project);
+				const url = this.getDebugUrl(project.folder);
 				
 				if (!this.activeBrowser)
 					await this.maybeStartBrowser(url);
 				
 				await this.maybeStartDebugging(url);
 				this.broadcastViaSocket(msg);
-			});
-			
-			this.bus.listen(WindowMetricsMessage, async msg =>
-			{
-				GlobalState.set("metrics", msg);
 			});
 			
 			// We can expose the entire Puppeteer API to the browser 
@@ -287,26 +277,16 @@ namespace Moduless
 			if (this.activeBrowser)
 				return;
 			
-			let w = 1024;
-			let h = 768;
-			let x = 0;
-			let y = 0;
-			
-			const wmmText = await GlobalState.get("metrics");
-			if (wmmText)
-			{
-				const msg = Message.parse<WindowMetricsMessage>(wmmText);
-				[w, h, x, y] = [msg.width, msg.height, msg.screenX, msg.screenY];
-			}
+			const metrics = GlobalState.browserWindowMetrics;
 			
 			this.activeBrowser = await Pup.launch({
-				headless: !this._isBrowserShown,
-				devtools: this._isDevtoolsShown,
+				headless: !GlobalState.isBrowserShown,
+				devtools: GlobalState.isDevtoolsShown,
 				defaultViewport: null,
 				args: [
 					`--remote-debugging-port=9222`,
-					`--window-size=${w},${h}`,
-					`--window-position=${x},${y}`
+					`--window-size=${metrics.width},${metrics.height}`,
+					`--window-position=${metrics.screenX},${metrics.screenY}`
 				]
 			});
 			
@@ -334,24 +314,20 @@ namespace Moduless
 					sourceMaps: true
 				}
 			);
-			
-			Extension.setContext(Contexts.debugging, true);
 		}
 		
 		/** */
-		private getDebugUrl(project: Project)
+		private getDebugUrl(folder: string)
 		{
-			return `http://localhost:${this.httpPort}/??` + project.folder;
+			return `http://localhost:${this.httpPort}/??` + folder;
 		}
 		
 		private activeBrowser: Pup.Browser | null = null;
 		private activePage: Pup.Page | null = null;
 		
 		/** */
-		private stopDebugging()
+		stopDebugging()
 		{
-			Extension.setContext(Contexts.debugging, false);
-			
 			if (this.activeBrowser)
 			{
 				this.activeBrowser.close();
@@ -359,35 +335,5 @@ namespace Moduless
 				this.activePage = null;
 			}
 		}
-		
-		/**
-		 * Gets or sets whether a browser should
-		 * display when a debugging session starts.
-		 */
-		get isBrowserShown()
-		{
-			return this._isBrowserShown;
-		}
-		set isBrowserShown(value: boolean)
-		{
-			this._isBrowserShown = value;
-			Extension.setContext(Contexts.browserVisible, value);
-		}
-		private _isBrowserShown = false;
-		
-		/**
-		 * Gets or sets whether the devtools panel should display
-		 * in the browser when a debugging session starts.
-		 */
-		get isDevtoolsShown()
-		{
-			return this._isDevtoolsShown;
-		}
-		set isDevtoolsShown(value: boolean)
-		{
-			this._isDevtoolsShown = value;
-			Extension.setContext(Contexts.devtoolsVisible, value);
-		}
-		private _isDevtoolsShown = false;
 	}
 }

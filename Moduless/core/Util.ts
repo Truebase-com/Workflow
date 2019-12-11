@@ -101,5 +101,34 @@ namespace Moduless
 			
 			return pathsBroken[0].slice(0, maxCommonPart).join(Path.sep);
 		}
+		
+		/**
+		 * Returns the name of the cover function at the specified line,
+		 * or an empty string in the case when the specified line does not
+		 * define a cover function.
+		 */
+		export function getCoverNameFromLine(lineText: string)
+		{
+			const searchString = "function " + Constants.prefix;
+			const functionStart = lineText.indexOf(searchString);
+			if (functionStart < 0)
+				return "";
+			
+			// 99.9% of non-cover lines will be efficiently ruled out
+			// by the above check, but we keep going just to be sure.
+			
+			const lineLeft = lineText.slice(0, functionStart).trimLeft();
+			
+			if (lineLeft !== "" &&
+				lineLeft !== "export async " &&
+				lineLeft !== "async ")
+				return "";
+			
+			const lineRight = lineText.slice(functionStart + searchString.length);
+			if (!/^[A-Z0-9][A-Za-z0-9]*\(\)/.test(lineRight))
+				return "";
+			
+			return Constants.prefix + lineRight.slice(0, lineRight.indexOf("("));
+		}
 	}
 }

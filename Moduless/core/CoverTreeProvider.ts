@@ -46,10 +46,12 @@ namespace Moduless
 					coverTreeItems.push(...this.addProject(msg.project));
 				
 				const treeItem = new CoverTreeItem(
+					workspaceRoot,
 					msg.project,
 					msg.coverFunctionName);
 				
 				coverTreeItems.splice(msg.coverIndex, 0, treeItem);
+				this.refresh();
 			});
 			
 			bus.listen(RemoveCoverMessage, msg =>
@@ -59,6 +61,12 @@ namespace Moduless
 					return;
 				
 				coverItems.splice(msg.coverIndex, 1);
+				this.refresh();
+			});
+			
+			bus.listen(SelectCoverMessage, () =>
+			{
+				this.refresh();
 			});
 		}
 		
@@ -173,7 +181,7 @@ namespace Moduless
 		/**
 		 * Returns the text to display in the user interface in the tree
 		 */
-		private static getLabel(project: Project, coverFunctionName: string)
+		private static getLabel(coverFunctionName: string)
 		{
 			return coverFunctionName
 				.slice(Constants.prefix.length)
@@ -181,14 +189,15 @@ namespace Moduless
 				.map((v, i) => i > 0 ? v.toLowerCase() : v)
 				.join(" ");
 		}
-		
+		 
 		/** */
 		constructor(
+			private readonly workspaceRoot: string,
 			readonly project: Project,
 			readonly coverFunctionName: string)
 		{
 			super(
-				CoverTreeItem.getLabel(project, coverFunctionName),
+				CoverTreeItem.getLabel(coverFunctionName),
 				Vs.TreeItemCollapsibleState.None);
 			
 			this.id = project.outFile + ":" + coverFunctionName;
@@ -196,6 +205,23 @@ namespace Moduless
 		
 		/** */
 		readonly id: string;
+		
+		/** */
+		get iconPath()
+		{
+			const cov = GlobalState.selectedCover;
+			
+			if (cov.coverFunctionName !== this.coverFunctionName)
+				return "";
+			
+			if (!cov.containingFile.startsWith(this.project.folder))
+				return "";
+			
+			return {
+				light: Path.join(this.workspaceRoot, "icons/start-light.png"),
+				dark: Path.join(this.workspaceRoot, "icons/start-dark.png")
+			};
+		}
 		
 		/** */
 		get tooltip() { return "Click to run this cover."; }
@@ -221,5 +247,4 @@ namespace Moduless
 			};
 		}
 	}
-	
 }

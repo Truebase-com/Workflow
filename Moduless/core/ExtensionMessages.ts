@@ -25,7 +25,7 @@ namespace Moduless
 	export class SelectCoverMessage extends Message
 	{
 		constructor(
-			readonly projectPath: string,
+			readonly containingFile: string,
 			readonly coverFunctionName: string)
 		{ super(); }
 	}

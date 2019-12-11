@@ -79,12 +79,19 @@ const enum Commands
 
 const enum Contexts
 {
-	debugging = "debugging",
 	browserVisible = "browserVisible",
 	devtoolsVisible = "devtoolsVisible"
 }
 
+const enum States
+{
+	windowMetrics = "windowMetrics",
+	isBrowserShown = "isBrowserShown",
+	isDevtoolsShown = "isDevtoolsShown"
+}
+
 namespace Moduless
 {
-	Object.assign(Moduless, require("./moduless.common.js"));
+	export const Common = require("./moduless.common.js");
+	Object.assign(Moduless, Common);
 }

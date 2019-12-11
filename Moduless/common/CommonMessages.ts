@@ -9,7 +9,7 @@ namespace Moduless
 	export class StartCoverMessage extends Message
 	{
 		constructor(
-			readonly projectPath: string,
+			readonly containingFilePath: string,
 			readonly coverName: string)
 		{ super(); }
 	}

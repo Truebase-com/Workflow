@@ -9,17 +9,18 @@ namespace Moduless
 	 */
 	async function activate(context: Vs.ExtensionContext)
 	{
-		GlobalState.init(context.globalStoragePath);
-		
 		const bus = new MessageBus();
+		GlobalState.init(context.globalStoragePath, bus);
 		const projectGraph = await ProjectGraph.new(bus);
-		const execService = new ExecutionService(projectGraph, bus);
 		
-		new CoverDecorationService();
+		const execSvc = new ExecutionService(projectGraph, bus);
+		new CoverManagementService(bus);
 		new ReportingChannel(bus);
 		
 		const treeView = Vs.window.createTreeView("moduless.covers", {
-			treeDataProvider: new CoverTreeProvider("", projectGraph, bus)
+			treeDataProvider: new CoverTreeProvider(
+				context.extensionPath,
+				projectGraph, bus)
 		});
 		
 		context.subscriptions.push(treeView);
@@ -38,41 +39,39 @@ namespace Moduless
 			// from some other non-cover function, it uses the last one. (You still need to
 			// be able to click to run a specific cover)
 			
-			const projectPath = "";
-			const coverName = "";
-			
-			bus.emit(new SelectCoverMessage(projectPath, coverName));
-			bus.emit(new StartCoverMessage(projectPath, coverName));
+			const selected = GlobalState.selectedCover;
+			bus.emit(new StartCoverMessage(
+				selected.containingFile,
+				selected.coverFunctionName));
 		});
 		
 		registerCommand(Commands.stop, () =>
 		{
-			debugger;
+			// Lame...
+			execSvc.stopDebugging();
 		});
 		
 		registerCommand(Commands.setBrowserVisible, () =>
 		{
-			execService.isBrowserShown = true;
+			GlobalState.isBrowserShown = true;
 		});
 		
 		registerCommand(Commands.setBrowserInvisible, () =>
 		{
-			execService.isBrowserShown = false;
+			GlobalState.isBrowserShown = false;
 		});
 		
 		registerCommand(Commands.setDevtoolsVisible, () =>
 		{
-			execService.isDevtoolsShown = true;
+			GlobalState.isDevtoolsShown = true;
 		});
 		
 		registerCommand(Commands.setDevtoolsInvisible, () =>
 		{
-			execService.isDevtoolsShown = false;
+			GlobalState.isDevtoolsShown = false;
 		});
 		
 		bus.emit(new InitializeMessage());
-		
-		
 	}
 	
 	
@@ -102,4 +101,6 @@ namespace Moduless
 			void "capture()"
 		);
 	}
+	
+	Object.assign(Common, Moduless);
 }
