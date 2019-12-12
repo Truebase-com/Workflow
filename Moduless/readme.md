@@ -35,3 +35,24 @@ This requires the Shell integration to be installed. On macOS, this is done by r
 Moduless debugging works differently from standard debugging. Instead of running the standard VS Code debugging command, the Moduless extension provides it's own command to start a debugging session. The command names are `moduless.start` and `moduless.stop`, and the hotkeys default to `F5`, but this can be configured.
 
 Moduless dispenses with the idea of `launch.json`. Instead, launch configurations are generated automatically by analyzing the project structure.
+
+## Detecting "Cover" Functions
+
+Moduless refers to test functions as "cover" functions. Cover functions are regular JavaScript functions that start with the name "cover". This way, your test files  look as clean as like:
+
+```
+namespace MyProject
+{
+	function coverAddition()
+	{
+		const add = 1 + 2;
+		return () => add === 3;
+	}
+}
+```
+
+Cover functions are expected to return a parameterless arrow function (or an array of these), which are executed in order to determine if the cover passes or fails. The formatting of this arrow function is significant–Moduless uses `Function.toString()` on the back end to turn this code into a visual report about what passed and failed.
+
+Moduless will automatically detect cover functions in your `outFile`, and populate the test view in VS Code. Clicking on one of these tests in the test view will cause it to be run automatically. Additionally, the Moduless extension automatically detects these functions within your source code, and highlights them:
+
+![Moduless](screenshot.png)
