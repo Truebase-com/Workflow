@@ -15,15 +15,6 @@
 	{
 		"type": "node",
 		"request": "launch",
-		"name": "Debug Node",
-		"program": "${workspaceRoot}/build/index.js",
-		"cwd": "${workspaceRoot}",
-		"sourceMaps": true,
-		"smartStep": true
-	},
-	{
-		"type": "node",
-		"request": "launch",
 		"name": "Debug Makets Script",
 		"program": "${env:HOME}/.npm-packages/bin/makets",
 		"cwd": "${workspaceRoot}",
