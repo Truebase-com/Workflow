@@ -217,10 +217,7 @@ namespace Moduless
 		private broadcastViaSocket(message: Message)
 		{
 			if (this.wsServer.clients.size === 0)
-			{
-				Vs.window.showErrorMessage("No connected clients.");
 				return;
-			}
 			
 			const messageText = message.toString();
 			for (const client of this.wsServer.clients)
