@@ -86,7 +86,7 @@
 			},
 			{
 				"command": "moduless.start",
-				"title": "Starts the moduless debugging session",
+				"title": "Start a moduless debugging session",
 				"icon": {
 					"light": "icons/start-light.png",
 					"dark": "icons/start-dark.png"
@@ -96,7 +96,7 @@
 			},
 			{
 				"command": "moduless.stop",
-				"title": "Stops the moduless debugging session",
+				"title": "Stop the moduless debugging session",
 				"icon": {
 					"light": "icons/stop-light.png",
 					"dark": "icons/stop-dark.png"

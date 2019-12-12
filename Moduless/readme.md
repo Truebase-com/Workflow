@@ -1,47 +1,37 @@
 # Moduless
 
-This is a debugging tool to support running TypeScript composite projects that don't use any module loading mechanism. 
+This is a Visual Studio Code extension designed to support a module-free, bundler-free workflow.
+
+## Installation
+
+The extension is not on the marketplace, so you'll need to have the `vsce` tool installed globally in order to build this. Install it with:
+
+```
+npm install vsce -g
+```
+
+Once VSCE is installed, you need to package this project in order to create a `.vsix` file which will be loaded manually into VS Code. Do this by running the following command from root folder of this project (the which is the `/Moduless` folder in this repo):
+
+```
+vsce package
+```
+
+This will create a file named like `moduless-?.?.?.vsix`. This file then needs to be installed manually in VS Code. This done from the command line, with the following command:
+
+```
+code --install-extension moduless-?.?.?.vsix
+```
+
+If you're running the insiders build of VS Code, the command is:
+
+```
+code-insiders --install-extension moduless-?.?.?.vsix
+```
+
+This requires the Shell integration to be installed. On macOS, this is done by running the command from VS Code: `Shell Command: Install 'code' command in PATH`.
 
 ## Usage
 
-Install globally with:
+Moduless debugging works differently from standard debugging. Instead of running the standard VS Code debugging command, the Moduless extension provides it's own command to start a debugging session. The command names are `moduless.start` and `moduless.stop`, and the hotkeys default to `F5`, but this can be configured.
 
-```
-npm install moduless -g
-```
-
-After installation, run the `moduless` command from the folder that contains the `tsconfig.json` file that is the starting point of your composite project. Moduless will recursively traverse the project references specified in this tsconfig file, cherry picking all `"outFile"` settings. 
-
-Moduless then starts a hidden HTTP server that serves out an index.html file from the root, and this HTML file will contain a separate `<script src="...">` tag that points to each discovered `"outFile"`.
-
-When the Moduless server is running, you should be able to debug complex TypeScript composite projects, without ever having to use a single `import` anywhere.
-
-For Visual Studio Code, you'll need a `launch.json` configuration that sets the `webRoot` to the folder that contains all referenced composites. For example, if your composite projects look like:
-
-- /Users/you/folder/project/a/tsconfig.json
-- /Users/you/folder/project/b/tsconfig.json
-
-The `webRoot` should be:
-- /Users/you/folder/project/
-
-Below is an example of a launch.json:
-
-```json
-{
-	"version": "0.2.0",
-	"configurations": [{
-		"type": "chrome",
-		"request": "launch",
-		"name": "???",
-		"url": "http://localhost:7007",
-		"port": 9222,
-		"webRoot": "${workspaceFolder}/../",
-		"timeout": 1000,
-		"sourceMaps": true,
-		"smartStep": true,
-		"runtimeArgs": [
-			"--headless"
-		]
-	}]
-}
-```
+Moduless dispenses with the idea of `launch.json`. Instead, launch configurations are generated automatically by analyzing the project structure.
