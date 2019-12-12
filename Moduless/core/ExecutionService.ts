@@ -139,19 +139,8 @@ namespace Moduless
 			
 			const path = Path.parse(specifier);
 			
-			// Return a JavaScript file, likely one produced by an "outFile" setting
-			// specified by some tsconfig file somewhere. The JavaScript code may
-			// need to be instrumented in order to facilitate the discovery of tests.
-			if (path.ext === ".js")
-			{
-				debugger;
-				return "";
-				//const jsFileText = Fs.readFileSync(specifier).toString();
-				//const jsFileTextProcessed = JsProcessor.process(jsFileText);
-				//return jsFileTextProcessed;
-			}
 			// Other resource file (currently unused).
-			else if (path.ext)
+			if (path.ext)
 			{
 				return Fs.readFileSync(specifier);
 			}

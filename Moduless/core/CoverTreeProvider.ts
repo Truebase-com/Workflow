@@ -40,10 +40,9 @@ namespace Moduless
 			
 			bus.listen(AddCoverMessage, msg =>
 			{
-				const coverTreeItems = this.getProjectCoverNames(msg.project);
-				
+				let coverTreeItems = this.getCoverTreeItems(msg.project);
 				if (!coverTreeItems.length)
-					coverTreeItems.push(...this.addProject(msg.project));
+					coverTreeItems = this.addProject(msg.project);
 				
 				const treeItem = new CoverTreeItem(
 					workspaceRoot,
@@ -56,7 +55,7 @@ namespace Moduless
 			
 			bus.listen(RemoveCoverMessage, msg =>
 			{
-				const coverItems = this.getProjectCoverNames(msg.project);
+				const coverItems = this.getCoverTreeItems(msg.project);
 				if (coverItems.length === 0)
 					return;
 				
@@ -79,7 +78,7 @@ namespace Moduless
 		}
 		
 		/** */
-		private getProjectCoverNames(project: Project)
+		private getCoverTreeItems(project: Project)
 		{
 			const entry = this.ordering.find(v => v[0] === project);
 			return entry ? entry[1] : [];
@@ -137,7 +136,7 @@ namespace Moduless
 			const projects = Array.from(this.projectGraph);
 			const items = projects
 				.filter(v => v.name)
-				.filter(v => this.getProjectCoverNames(v).length > 0)
+				.filter(v => this.getCoverTreeItems(v).length > 0)
 				.map(v => new ProjectTreeItem(v));
 			
 			return Promise.resolve(items);
