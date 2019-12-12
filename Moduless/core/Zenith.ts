@@ -89,18 +89,5 @@ namespace Moduless
 	exports.activate = activate;
 	exports.deactivate = deactivate;
 	
-	
-	
-	function coverSomething()
-	{
-		const ml: any = null;
-		
-		ml.div(
-			void "click()",
-			void "type('something')",
-			void "capture()"
-		);
-	}
-	
 	Object.assign(Common, Moduless);
 }
