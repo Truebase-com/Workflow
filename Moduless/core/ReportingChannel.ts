@@ -18,7 +18,7 @@ namespace Moduless
 				if (msg.verifications.every(v => v.pass))
 				{
 					const friendlyName = Util.getCoverFriendlyName(msg.coverName);
-					Vs.window.showInformationMessage(friendlyName + " (PASS)");
+					Vs.window.showInformationMessage("Cover passed: " + friendlyName);
 					return;
 				}
 				
