@@ -71,6 +71,18 @@ namespace Moduless
 			GlobalState.isDevtoolsShown = false;
 		});
 		
+		const tasks = await Vs.tasks.fetchTasks();
+		const mainWatchTask = tasks.find(task =>
+		{
+			const def = task.definition as ITypeScriptTaskDefinition;
+			return def.type === "typescript" &&
+				def.option === "watch" &&
+				def.tsconfig === "tsconfig.json";
+		});
+		
+		if (mainWatchTask)
+			Vs.tasks.executeTask(mainWatchTask);
+		
 		bus.emit(new InitializeMessage());
 	}
 	
@@ -83,6 +95,14 @@ namespace Moduless
 		
 		for (const disposable of disposables)
 			disposable.dispose();
+	}
+	
+	/** */
+	interface ITypeScriptTaskDefinition
+	{
+		option: "watch" | "build";
+		tsconfig: string;
+		type: string;
 	}
 	
 	exports.activate = activate;
