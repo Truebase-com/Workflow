@@ -74,7 +74,6 @@ namespace Moduless
 		bus.emit(new InitializeMessage());
 	}
 	
-	
 	/**
 	 * This method is called when the extension is deactivated.
 	 */
