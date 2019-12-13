@@ -13,7 +13,7 @@ namespace Moduless
 		GlobalState.init(context.globalStoragePath, bus);
 		const projectGraph = await ProjectGraph.new(bus);
 		
-		const execSvc = new ExecutionService(projectGraph, bus);
+		const execSvc = await ExecutionService.new(projectGraph, bus);
 		new CoverManagementService(bus);
 		new ReportingChannel(bus);
 		

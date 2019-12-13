@@ -6,22 +6,27 @@ namespace Moduless
 	 */
 	export class ExecutionService
 	{
-		constructor(
-			private readonly projectGraph: ProjectGraph,
-			private readonly bus: MessageBus)
+		/** */
+		static async new(
+			projectGraph: ProjectGraph,
+			bus: MessageBus)
 		{
+			const ports = await Moduless.findPorts();
+			return await new ExecutionService(projectGraph, bus, ports);
+		}
+		
+		/** */
+		private constructor(
+			private readonly projectGraph: ProjectGraph,
+			private readonly bus: MessageBus,
+			ports: IPorts)
+		{
+			this.httpPort = ports.httpPort;
+			this.wsPort = ports.wsPort;
 			this.httpServer = this.setupHttpServer();
 			this.wsServer = this.setupSocketServer();
 			this.setupPuppeteerListeners();
 		}
-		
-		/** */
-		dispose()
-		{
-			this.stopDebugging();
-		}
-		
-		//# HTTP and Socket Server Members
 		
 		/** */
 		private setupHttpServer()
@@ -81,6 +86,7 @@ namespace Moduless
 			
 			httpServer.listen(this.httpPort);
 			console.log("Moduless HTTP server listening on port: " + this.httpPort);
+			
 			return httpServer;
 		}
 		
@@ -97,11 +103,17 @@ namespace Moduless
 				});
 			});
 			
-			this.bus.listen(ReloadMessage, msg => this.broadcastViaSocket(msg));
-			
 			console.log("Moduless WebSocket server listening on port: " + this.wsPort);
 			return wsServer;
 		}
+		
+		/** */
+		dispose()
+		{
+			this.stopDebugging();
+		}
+		
+		//# HTTP and Socket Server Members
 		
 		/** */
 		private readonly httpServer: Http.Server;
@@ -113,10 +125,10 @@ namespace Moduless
 		// We're going to need to do a port scan and find an available port.
 		
 		/** The port number on which to launch the moduless HTTP server. */
-		private readonly httpPort = 10001;
+		private readonly httpPort: number;
 		
 		/** The port number on which to launch the moduless WebSocket server. */
-		private readonly wsPort = 10002;
+		private readonly wsPort: number;
 		
 		/** */
 		private readonly standardFiles = {
