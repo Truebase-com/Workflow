@@ -130,5 +130,48 @@ namespace Moduless
 			
 			return Constants.prefix + lineRight.slice(0, lineRight.indexOf("("));
 		}
+		
+		/**
+		 * Converts a cover name which is expected to be in the format
+		 * "coverSomeSpecificBehavior" to read like "Some specific behavior".
+		 */
+		export function getCoverFriendlyName(coverName: string)
+		{
+			return coverName
+				.slice(Constants.prefix.length)
+				.split(/(?=[A-Z])/)
+				.map((v, i) => i > 0 ? v.toLowerCase() : v)
+				.join(" ");
+		}
+		
+		/**
+		 * Logs an information message to the console, using a moduless-specific branding.
+		 */
+		export function log(message: string)
+		{
+			const titleCss = "background: blue; color: white; border-radius: 3px; padding: 5px 10px";
+			const contentCss = "background: transparent; color: inherit";
+			console.log("%cModuless%c\n" + message, titleCss, contentCss);
+		}
+		
+		/**
+		 * Logs a warning message to the console, using a moduless-specific branding.
+		 */
+		export function warn(message: string)
+		{
+			const titleCss = "background: yellow; color: black; border-radius: 3px; padding: 5px 10px";
+			const contentCss = "background: transparent; color: inherit";
+			console.warn("%cModuless%c\n" + message, titleCss, contentCss);
+		}
+		
+		/**
+		 * Logs an error message to the console, using a moduless-specific branding.
+		 */
+		export function error(message: string)
+		{
+			const titleCss = "background: red; color: red; border-radius: 3px; padding: 5px 10px";
+			const contentCss = "background: transparent; color: inherit";
+			console.warn("%cModuless%c\n" + message, titleCss, contentCss);
+		}
 	}
 }

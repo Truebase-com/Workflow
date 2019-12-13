@@ -26,7 +26,7 @@ namespace Moduless
 				this.createRecursive(file.fsPath);
 			
 			for (const project of this.projects.values())
-				console.log(project.filePath);
+				Util.log("Adding project to graph: " + project.filePath);
 		}
 		
 		/** */
@@ -34,13 +34,13 @@ namespace Moduless
 		{
 			if (!Fs.existsSync(targetConfigFilePath))
 			{
-				console.warn("File does not exist: " + targetConfigFilePath);
+				Util.warn("File does not exist: " + targetConfigFilePath);
 				return null;
 			}
 			
 			if (this.projects.has(targetConfigFilePath))
 			{
-				console.warn("Circular project reference including: " + targetConfigFilePath);
+				Util.warn("Circular project reference including: " + targetConfigFilePath);
 				return this.projects.get(targetConfigFilePath) || null;
 			}
 			
@@ -57,7 +57,7 @@ namespace Moduless
 				// because they'll already be in the output.
 				if (prepend)
 				{
-					console.log(`(Found ${refPath}, but skipping because "prepend" is true.)`);
+					Util.warn(`(Found ${refPath}, but skipping because "prepend" is true.)`);
 					continue;
 				}
 				
@@ -93,7 +93,7 @@ namespace Moduless
 					}
 				}
 				
-				console.log("Invalid script URL: " + String(script));
+				Util.error("Invalid script URL: " + String(script));
 			}
 			
 			let outFile = "";

@@ -85,7 +85,7 @@ namespace Moduless
 			});
 			
 			httpServer.listen(this.httpPort);
-			console.log("Moduless HTTP server listening on port: " + this.httpPort);
+			Util.log("Moduless HTTP server listening on port: " + this.httpPort);
 			
 			return httpServer;
 		}
@@ -103,7 +103,7 @@ namespace Moduless
 				});
 			});
 			
-			console.log("Moduless WebSocket server listening on port: " + this.wsPort);
+			Util.log("Moduless WebSocket server listening on port: " + this.wsPort);
 			return wsServer;
 		}
 		

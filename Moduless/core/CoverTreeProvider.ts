@@ -182,11 +182,7 @@ namespace Moduless
 		 */
 		private static getLabel(coverFunctionName: string)
 		{
-			return coverFunctionName
-				.slice(Constants.prefix.length)
-				.split(/(?=[A-Z])/)
-				.map((v, i) => i > 0 ? v.toLowerCase() : v)
-				.join(" ");
+			return Util.getCoverFriendlyName(coverFunctionName);
 		}
 		 
 		/** */
@@ -240,7 +236,7 @@ namespace Moduless
 		{
 			return {
 				command: Commands.start,
-				title: "try",
+				title: "start",
 				arguments: [this.project.folder, this.coverFunctionName],
 				tooltip: ""
 			};

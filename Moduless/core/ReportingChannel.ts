@@ -8,14 +8,19 @@ namespace Moduless
 		{
 			const channel = Vs.window.createOutputChannel("Moduless");
 			
-			bus.listen(StartCoverMessage, msg =>
+			bus.listen(StartCoverMessage, () =>
 			{
 				channel.clear();
 			});
 			
 			bus.listen(EndCoverMessage, msg =>
 			{
-				channel.show(true);
+				if (msg.verifications.every(v => v.pass))
+				{
+					const friendlyName = Util.getCoverFriendlyName(msg.coverName);
+					Vs.window.showInformationMessage(friendlyName + " (PASS)");
+					return;
+				}
 				
 				const lines: string[] = [];
 				
@@ -27,19 +32,20 @@ namespace Moduless
 						...msg.exceptionStack.map(v => "\t\t" + v)
 					);
 				}
-				else if (msg.verifications.every(v => v.pass))
-				{
-					lines.push("PASS: " + msg.coverName);
-				}
 				else
 				{
 					lines.push(
 						"FAIL: " + msg.coverName,
-						...msg.verifications.map(v => `\t${v.pass ? "√" : "✗:"} ${v.expression}`)
+						...msg.verifications
+							.map(v => `\t${v.pass ? "√" : "✗:"} ${v.expression}`)
 					);
 				}
 				
-				channel.appendLine(lines.join("\n"));
+				if (lines.length)
+				{
+					channel.show(true);
+					channel.appendLine(lines.join("\n"));
+				}
 			});
 		}
 	}

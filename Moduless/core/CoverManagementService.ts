@@ -42,7 +42,7 @@ namespace Moduless
 					if (coverName === "")
 						continue;
 					
-					console.log("Selected: " + coverName);
+					Util.log("Selected cover: " + Util.getCoverFriendlyName(coverName));
 					bus.emit(new SelectCoverMessage(editingFilePath, coverName));
 					break;
 				}

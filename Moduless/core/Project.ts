@@ -125,7 +125,7 @@ namespace Moduless
 			const allScripts = this.eachScript();
 			
 			for (const sr of allScripts)
-				console.log(`Discovered ${ScriptKind[sr.kind]} script: ` + sr.uri);
+				Util.log(`Discovered ${ScriptKind[sr.kind]} script: ` + sr.uri);
 			
 			const localScriptPaths = allScripts
 				.filter(sc => sc.kind !== ScriptKind.external)
