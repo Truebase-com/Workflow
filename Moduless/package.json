@@ -26,24 +26,24 @@
 	"scripts": {
 		"publish": "makets publish",
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -p tsconfig.json",
-		"watch": "tsc -watch -p ./tsconfig.watch.json",
+		"compile": "tsc -b -p tsconfig.json",
+		"watch": "tsc -b -watch -p ./tsconfig.watch.json",
 		"postinstall": "node ./node_modules/vscode/bin/install",
-		"test": "npm run compile & node ./node_modules/vscode/bin/test",
-		"reload": "vsce package & code --install-extension moduless-2.0.0.vsix & code-insiders --install-extension moduless-2.0.0.vsix"
+		"test": "npm run compile && node ./node_modules/vscode/bin/test",
+		"reload": "vsce package && code --install-extension moduless-2.0.0.vsix & code-insiders --install-extension moduless-2.0.0.vsix"
 	},
 	"devDependencies": {
 		"@types/node": "^12.7.12",
 		"@types/puppeteer": "^2.0.0",
 		"@types/vscode": "^1.40.0",
 		"@types/ws": "^6.0.4",
+		"vscode": "^1.1.36",
 		"typescript": "^3.7.2"
 	},
 	"dependencies": {
 		"meriyah": "^1.9.3",
 		"portchecker": "^0.1.2",
 		"puppeteer": "^2.0.0",
-		"vscode": "^1.1.36",
 		"ws": "^7.2.0"
 	},
 	"activationEvents": [
