@@ -272,25 +272,38 @@ namespace Moduless
 		 */
 		private async maybeStartBrowser(url: string)
 		{
-			if (this.activeBrowser)
-				return;
-			
-			const metrics = GlobalState.browserWindowMetrics;
-			
-			this.activeBrowser = await Pup.launch({
-				headless: !GlobalState.isBrowserShown,
-				devtools: GlobalState.isDevtoolsShown,
-				defaultViewport: null,
-				args: [
-					`--remote-debugging-port=9222`,
-					`--window-size=${metrics.width},${metrics.height}`,
-					`--window-position=${metrics.screenX},${metrics.screenY}`
-				]
+			return new Promise(resolve =>
+			{
+				if (this.activeBrowser)
+					return resolve();
+				
+				const metrics = GlobalState.browserWindowMetrics;
+				
+				Pup.launch({
+					ignoreHTTPSErrors: true,
+					headless: !GlobalState.isBrowserShown,
+					devtools: GlobalState.isDevtoolsShown,
+					defaultViewport: null,
+					args: [
+						`--remote-debugging-port=9222`,
+						`--window-size=${metrics.width},${metrics.height}`,
+						`--window-position=${metrics.screenX},${metrics.screenY}`,
+						url
+					]
+				}).then(async browser =>
+				{
+					this.activeBrowser = browser;
+					const pages = await this.activeBrowser.pages();
+					const page = pages[0];
+					this.activePage = page;
+					resolve();
+				})
+				.catch(reason =>
+				{
+					Util.error(reason);
+					resolve();
+				});
 			});
-			
-			const page = (await this.activeBrowser.pages())[0];
-			await page.goto(url);
-			this.activePage = page;
 		}
 		
 		/**
@@ -301,7 +314,7 @@ namespace Moduless
 			await Vs.debug.startDebugging(
 				undefined,
 				{
-					name: "Reflex ML (Puppeteer)",
+					name: "(Auto-generated debug configuration)",
 					type: "chrome",
 					request: "attach",
 					port: 9222,
