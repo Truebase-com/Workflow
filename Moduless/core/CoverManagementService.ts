@@ -82,7 +82,7 @@ namespace Moduless
 					renderOptions: {
 						after: {
 							contentText: "	Cover function",
-							color: "rgba(0, 0, 0, 0.18)",
+							color: new Vs.ThemeColor("descriptionForeground"),
 							fontStyle: "italic"
 						}
 					}
