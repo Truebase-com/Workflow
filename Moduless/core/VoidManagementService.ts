@@ -2,11 +2,11 @@
 namespace Moduless
 {
 	/**
-	 * A class that deals with detecting cover functions in the active text editor,
+	 * A class that deals with detecting void expressions in the active text editor,
 	 * possibly adding the necessary decorators around it, and detecting
 	 * when the caret moves over one so that it can be set as the active.
 	 */
-	export class CoverManagementService
+	export class VoidManagementService
 	{
 		constructor(bus: MessageBus)
 		{
@@ -30,7 +30,7 @@ namespace Moduless
 					return;
 				
 				const editingFilePath = textEditor.document.uri.fsPath;
-				if (!this.filesWithCovers.includes(editingFilePath))
+				if (!this.filesWithVoids.includes(editingFilePath))
 					return;
 				
 				const caretPos = ev.selections[0].active;
@@ -38,12 +38,12 @@ namespace Moduless
 				for (let nowLineIdx = caretPos.line; nowLineIdx >= 0; nowLineIdx--)
 				{
 					const nowLine = textEditor.document.lineAt(nowLineIdx).text;
-					const coverName = Util.getCoverNameFromLine(nowLine);
-					if (coverName === "")
+					const [ exprName ] = Util.getVoidExpressionFromLine(nowLine);
+					if (!exprName)
 						continue;
 					
-					Util.log("Selected cover: " + Util.getCoverFriendlyName(coverName));
-					bus.emit(new SelectCoverMessage(editingFilePath, coverName));
+					Util.log("Selected void: " + exprName);
+					//bus.emit(new SelectCoverMessage(editingFilePath, coverName));
 					break;
 				}
 			});
@@ -68,8 +68,8 @@ namespace Moduless
 			for (let lineNum = 0; lineNum < sourceCodeLines.length; lineNum++)
 			{
 				const lineText = sourceCodeLines[lineNum];
-				const coverName = Util.getCoverNameFromLine(lineText);
-				if (coverName === "")
+				const [ exprName ] = Util.getVoidExpressionFromLine(lineText);
+				if (!exprName)
 					continue;
 				
 				const range = new Vs.Range(
@@ -81,7 +81,7 @@ namespace Moduless
 					range,
 					renderOptions: {
 						after: {
-							contentText: "	Cover function",
+							contentText: " Void Expression",
 							color: new Vs.ThemeColor("descriptionForeground"),
 							fontStyle: "italic"
 						}
@@ -95,9 +95,9 @@ namespace Moduless
 				return;
 			
 			editor.setDecorations(this.decorationType, decorationsArray);
-			this.filesWithCovers.push(textDocument.uri.fsPath);
+			this.filesWithVoids.push(textDocument.uri.fsPath);
 		}
 		
-		private readonly filesWithCovers: string[] = [];
+		private readonly filesWithVoids: string[] = [];
 	}
 }
