@@ -15,6 +15,7 @@ namespace Moduless
 		
 		const execSvc = await ExecutionService.new(projectGraph, bus);
 		new CoverManagementService(bus);
+		new VoidManagementService(bus);
 		new ReportingChannel(bus);
 		
 		const treeView = Vs.window.createTreeView("moduless.covers", {

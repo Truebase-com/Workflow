@@ -103,6 +103,85 @@ namespace Moduless
 		}
 		
 		/**
+		 * Walks on given string and invokes (fn) for every char,
+		 * loops until either getting true or undefined back from (fn) or text ends.
+		 * If (fn) returns a number that number is used for new value of iterator.
+		 * 
+		 * @param text String to walk on
+		 * @param start Starting index
+		 * @param fn Callback to be invoked for every char
+		 * @param reverse Walk backwards
+		 */
+		export function textWalker(
+			text: string,
+			start: number, 
+			fn: (char: string, index: number) => boolean | number | undefined, 
+			reverse = false)
+		{
+			for (let i = start; reverse ? i >= 0 : i < text.length; )
+			{
+				const v = fn(text[i], i);
+				
+				if (v === true)
+					return i;
+				else if (v === false)
+					reverse ? i-- : i++;
+				else if (typeof v === "number")
+					i = v;
+				else 
+					return undefined;
+			}
+		}
+		
+		/**
+		 * Returns the name of the cover function at the specified line,
+		 * or an empty string in the case when the specified line does not
+		 * define a cover function.
+		 */
+		export function getVoidExpressionFromLine(lineText: string): [string | false, boolean]
+		{
+			const voidStart = lineText.indexOf("void \"");
+			if (voidStart < 0)
+				return [false, false];
+			
+			// 99.9% of non-cover lines will be efficiently ruled out
+			// by the above check, but we keep going just to be sure.
+			
+			const lineWalker = textWalker.bind(null, lineText);
+			
+			const exprStart = voidStart + 6;
+			
+			// Walk until next " and skip \"
+			let voidEnd = lineWalker(exprStart, (v, i) => 
+				v === "\\" ? i + 2 : 
+				v === "\""
+			);
+		
+			if(!voidEnd) 
+				return [false, false];
+				
+			const expr = lineText.substring(exprStart, voidEnd);
+			
+			// Check if there is ")" after void expression
+			let fnClose = lineWalker(voidEnd, v => 
+				v === ")"
+			);
+			
+			if (!fnClose) 
+				return [expr, false];
+				
+			// Check if there is "(" before void expression
+			let fnOpen = lineWalker(voidStart, v => 
+				v === "("
+			, true);
+			
+			if (!fnOpen)
+				return [expr, false];
+			
+			return [expr, true];
+		}
+		
+		/**
 		 * Returns the name of the cover function at the specified line,
 		 * or an empty string in the case when the specified line does not
 		 * define a cover function.
