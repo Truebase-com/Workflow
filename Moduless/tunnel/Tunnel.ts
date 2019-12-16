@@ -134,11 +134,23 @@ namespace Moduless
 			[]);
 	}
 	
+	let autoRunTestOnReload = setTimeout(async () => 
+	{
+		const lastCover = localStorage.getItem("lastCover");
+		if (lastCover)
+		{
+			const endCoverMessage = await runCover(lastCover);
+			ws.send(endCoverMessage.toString());
+		}
+	}, 750);
+	
 	/**
 	 * 
 	 */
 	async function handleStartCoverMessage(coverFunctionName: string)
 	{
+		localStorage.setItem("lastCover", coverFunctionName);
+		clearTimeout(autoRunTestOnReload);
 		const endCoverMessage = await runCover(coverFunctionName);
 		ws.send(endCoverMessage.toString());
 	}
