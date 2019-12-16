@@ -158,10 +158,10 @@ namespace Moduless
 		/**
 		 * 
 		 */
-		private onOutFileChange()
+		private async onOutFileChange()
 		{
 			const existingCoverNames = this.coverFunctionNames.slice();
-			this.updateProjectCode();
+			await this.updateProjectCode();
 			
 			const steps = Moduless.calculateMigrationSteps(
 				existingCoverNames,
@@ -182,13 +182,35 @@ namespace Moduless
 			this.bus.emit(new ReloadMessage());
 		}
 		
+		private sourceMap?: import("source-map").BasicSourceMapConsumer;
+		
 		/**
 		 * Instruments the specified body of source code so that cover functions
 		 * are detected and added to the global cover repository.
 		 */
-		private updateProjectCode()
+		private async updateProjectCode()
 		{
 			const originalCode = Fs.readFileSync(this.outFile).toString();
+			
+			const sourceMapIndex = originalCode.lastIndexOf("\n");
+			const lastLine = originalCode.substr(sourceMapIndex + 1);
+			const [ header, base64 ] = lastLine.split(",");
+			if (header === "//# sourceMappingURL=data:application/json;base64")
+			{
+				try {
+					const parsed = JSON.parse(base64Decode(base64));
+					const sourceMap = await new SourceMap.SourceMapConsumer(parsed);
+					
+					if (this.sourceMap)
+						this.sourceMap.destroy();
+						
+					this.sourceMap = sourceMap;
+				}
+				catch (ex)
+				{
+					console.error(ex);
+				}
+			}
 			
 			if (!originalCode.includes("function " + Constants.prefix))
 				return this._instrumentedCode = originalCode;
@@ -244,16 +266,22 @@ namespace Moduless
 			for (const node of program.body)
 				recurseAst(node);
 			
-			const splits: { position: number; functionName: string; }[] = [];
+			const splits: { 
+				position: number; 
+				functionName: string;
+				functionPosition?: ESTree.Position
+		 	}[] = [];
 			for (const decl of coverFunctions)
 			{
-				const functionName = decl.id?.name;
-				if (!functionName)
+				const funcId = decl.id;
+				
+				if (!funcId)
 					continue;
 				
 				splits.push({
 					position: decl.end || originalCode.length,
-					functionName
+					functionName: funcId.name,
+					functionPosition: funcId.loc?.start
 				});
 			}
 			
@@ -271,7 +299,22 @@ namespace Moduless
 			
 			outChunks.push(originalCode.slice(lastPosition));
 			this._instrumentedCode = outChunks.join("");
-			this._coverFunctionNames = splits.map(v => v.functionName);
+			
+			this._coverFunctionNames = [];
+			this._coverFunctionPositions = {};
+			for (const item of splits)
+			{
+				this._coverFunctionNames.push(item.functionName);
+				this._coverFunctionPositions[item.functionName] = item.functionPosition;
+			}
+		}
+		
+		resolveSymbol(coverFunctionName: string)
+		{
+			const pos = this._coverFunctionPositions[coverFunctionName];
+			if (!pos) return null;
+			const result = this.sourceMap?.originalPositionFor(pos);
+			return result || null;
 		}
 		
 		/** */
@@ -287,5 +330,7 @@ namespace Moduless
 			return this._coverFunctionNames;
 		}
 		private _coverFunctionNames: string[] = [];
+		
+		private _coverFunctionPositions: Record<string, ESTree.Position | undefined> = {};
 	}
 }

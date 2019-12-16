@@ -44,6 +44,7 @@
 		"meriyah": "^1.9.3",
 		"portchecker": "^0.1.2",
 		"puppeteer": "^2.0.0",
+		"source-map": "^0.7.3",
 		"ws": "^7.2.0"
 	},
 	"activationEvents": [

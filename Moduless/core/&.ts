@@ -2,7 +2,7 @@
 const Vs = <typeof import("vscode")>require("vscode");
 const Fs = <typeof import("fs")>require("fs");
 const Http = <typeof import("http")>require("http");
-const Path: typeof import("path") = require("path");
+const Path = <typeof import("path")>require("path");
 const Url = <typeof import("url")>require("url");
 const Ws = <typeof import("ws")>require("ws");
 const Pup = <typeof import("puppeteer")>require("puppeteer");
@@ -69,6 +69,8 @@ const enum Commands
 {
 	start = "moduless.start",
 	stop = "moduless.stop",
+	
+	focusCover = "moduless.focusCover",
 	
 	setBrowserVisible = "moduless.set-browser-visible",
 	setBrowserInvisible = "moduless.set-browser-invisible",

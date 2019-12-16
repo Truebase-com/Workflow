@@ -46,6 +46,16 @@ namespace Moduless
 				selected.coverFunctionName));
 		});
 		
+		registerCommand(Commands.focusCover, async (project: Project, symbol: SourceMap.NullableMappedPosition) =>
+		{
+			if (!symbol.source) return;
+			
+			const editor = await Vs.window.showTextDocument(Vs.Uri.file(Path.join(project.folder, symbol.source)));
+			const pos = new Vs.Position(symbol.line || 0, symbol.column || 0);
+			editor.revealRange(new Vs.Range(pos, pos), Vs.TextEditorRevealType.InCenter);
+			editor.selection = new Vs.Selection(pos, pos);
+		});
+		
 		registerCommand(Commands.stop, () =>
 		{
 			// Lame...

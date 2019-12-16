@@ -234,10 +234,11 @@ namespace Moduless
 		/** */
 		get command(): Vs.Command
 		{
+			const symbol = this.project.resolveSymbol(this.coverFunctionName)!;
 			return {
-				command: Commands.start,
-				title: "start",
-				arguments: [this.project.folder, this.coverFunctionName],
+				command: Commands.focusCover,
+				title: "focus",
+				arguments: [this.project, symbol],
 				tooltip: ""
 			};
 		}
