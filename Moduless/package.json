@@ -30,7 +30,7 @@
 		"watch": "tsc -b -watch -p ./tsconfig.watch.json",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test",
-		"reload": "vsce package & code --install-extension moduless-2.0.0.vsix & code-insiders --install-extension moduless-2.0.0.vsix"
+		"reload": "vsce package && (code --install-extension moduless-2.0.0.vsix & code-insiders --install-extension moduless-2.0.0.vsix)"
 	},
 	"devDependencies": {
 		"@types/node": "^12.7.12",
@@ -140,6 +140,38 @@
 					"command": "moduless.stop",
 					"group": "navigation",
 					"when": "view == moduless.covers && inDebugMode"
+				}
+			],
+			"touchBar": [
+				{
+					"command": "moduless.set-browser-visible",
+					"group": "navigation",
+					"when": "!browserVisible"
+				},
+				{
+					"command": "moduless.set-browser-invisible",
+					"group": "navigation",
+					"when": "browserVisible"
+				},
+				{
+					"command": "moduless.set-devtools-visible",
+					"group": "navigation",
+					"when": "!devtoolsVisible"
+				},
+				{
+					"command": "moduless.set-devtools-invisible",
+					"group": "navigation",
+					"when": "devtoolsVisible"
+				},
+				{
+					"command": "moduless.start",
+					"group": "navigation",
+					"when": "!inDebugMode"
+				},
+				{
+					"command": "moduless.stop",
+					"group": "navigation",
+					"when": "inDebugMode"
 				}
 			],
 			"commandPalette": [
