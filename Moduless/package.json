@@ -26,7 +26,7 @@
 	"scripts": {
 		"publish": "makets publish",
 		"vscode:prepublish": "npm run compile",
-		"compile": "tsc -b -p tsconfig.json",
+		"compile": "tsc -b",
 		"watch": "tsc -b -watch -p ./tsconfig.watch.json",
 		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test",
