@@ -403,4 +403,6 @@ namespace Moduless
   export const SourceMap = <typeof import("source-map")>require("source-map");
   
   export const base64Decode = typeof atob === "undefined" ? ((v: string) => Buffer.from(v, 'base64').toString('binary')) : atob;
+  export const base64Encode = typeof btoa === "undefined" ? ((v: string) => Buffer.from(v, 'binary').toString('base64')) : btoa;
+
 }

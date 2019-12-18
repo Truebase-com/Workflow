@@ -50,4 +50,6 @@ namespace Moduless
 		parseModule(source: string, options: IParserOptions | void): ESTree.Program;
 		parse(source: string, options: IParserOptions | void): ESTree.Program;
 	} = require("meriyah");
+	
+	export const JsBuilder = <typeof import("astring")>require("astring");
 }

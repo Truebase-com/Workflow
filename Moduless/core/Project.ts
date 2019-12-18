@@ -183,6 +183,164 @@ namespace Moduless
 		}
 		
 		private sourceMap?: import("source-map").BasicSourceMapConsumer;
+		private parentMap = new WeakMap<ESTree.Node, ESTree.Node | undefined>();
+		
+		/** */
+		private AstWalker<T extends ESTree.Node>(
+			node: ESTree.Node, 
+			condition: (node: ESTree.Node) => boolean
+		){
+			const nodes: T[] = [];
+			
+			const recurseAst = (node: ESTree.Node, parent?: ESTree.Node) =>
+			{
+				if (!node || typeof node !== "object" || node.constructor !== Object)
+					return;
+				
+				if (condition(node))
+				{
+					nodes.push(node as T);
+					this.parentMap.set(node, parent);
+				}
+				
+				for (const value of Object.values(node))
+				{
+					if (Array.isArray(value))
+						for (const subNode of value)
+							recurseAst(subNode, node);
+					
+					else if (typeof value === "object")
+						recurseAst(value, node);
+				};
+			}
+			
+			recurseAst(node);
+			
+			return nodes;
+		}
+		
+		/** */
+		private parseScript(script: string)
+		{
+			return JsParser.parseScript(script, {
+				/** The flag to allow module code. */
+				module: true,
+				/** The flag to enable stage 3 support (ESNext). */
+				next: true,
+				/** The flag to enable start and end offsets to each node. */
+				ranges: true,
+				/** The flag to enable line/column location information to each node. */
+				loc: true,
+				/** The flag to attach raw property to each literal and identifier node. */
+				raw: true,
+				/** Enabled directives. */
+				directives: true,
+				/** The flag to enable implied strict mode. */
+				impliedStrict: true,
+				/** Enable lexical binding and scope tracking. */
+				lexical: true,
+				/**
+				 * Adds a source attribute in every node’s loc object 
+				 * when the locations option is `true`.
+				 */
+				source: true,
+				/** Distinguish Identifier from IdentifierPattern. */
+				identifierPattern: true
+			});
+		}
+		/** */
+		private extractCoverFunctions(program: ESTree.Program)
+		{
+			const coverFunctions: ESTree.FunctionDeclaration[] = 
+				this.AstWalker(program, 
+					node => node.type === "FunctionDeclaration" 
+						&& new RegExp(`^${Constants.prefix}[A-Z]`).test(node.id?.name || ""));
+			
+			this._coverFunctionNames = [];
+			this._coverFunctionPositions = {};
+			
+			for (const cover of coverFunctions)
+			{
+				const name = cover.id?.name;
+				if (!name)
+					continue;
+					
+				this._coverFunctionNames.push(name);
+				this._coverFunctionPositions[name] = cover.loc?.start;
+				
+				const parsed = this.parseScript(`Moduless.addCover(${name});`);
+				const parent = this.parentMap.get(cover);
+				if (parent)
+					(parent as ESTree.BlockStatement).body.push(...(parsed.body as any[]));
+			}
+			
+			return coverFunctions;
+		}
+		/** */
+		private extractVoidStrings(nodes: ESTree.Node[])
+		{
+			const voidStrings = nodes.map(cover => 
+				this.AstWalker<ESTree.UnaryExpression>(
+					cover, 
+					node => node.type === "UnaryExpression" && node.operator === "void"
+				).filter((v) => v.argument.type === "Literal")
+			).flat();
+			
+			for (const expr of voidStrings)
+			{
+				const parent = this.parentMap.get(expr);
+				if (!parent)
+					continue;
+				
+				const literal = (expr.argument as ESTree.Literal).value as string;
+				const parsed = (
+					this.parseScript(literal).body[0] as ESTree.ExpressionStatement
+				).expression as ESTree.CallExpression;
+				
+				const functionName = (parsed.callee as ESTree.Identifier).name;
+				const functionArgs = parsed.arguments.map((v) => (v as ESTree.Literal).raw);
+					
+				switch (parent.type)
+				{
+					case "CallExpression":
+					{
+						const index = parent.arguments.indexOf(expr as any);
+						if (index < 0)
+							continue;
+						
+						functionArgs.push("e");
+							
+						const generated = (this.parseScript(
+							`e => Puppeteer.send(Puppeteer.${functionName}(${functionArgs.join(",")}))`
+						).body[0] as ESTree.ExpressionStatement).expression;	
+							
+						parent.arguments.splice(index, 1, generated);
+						break;
+					}
+					case "ExpressionStatement":
+					{
+						parent.expression = this.parseScript(
+							`Puppeteer.send(Puppeteer.${functionName}(${functionArgs.join(",")}))`
+						) as unknown as ESTree.CallExpression;
+						
+						break;	
+					}
+					case "BlockStatement":
+					{
+						const index = parent.body.indexOf(expr as any);
+						if (index < 0)
+							continue;
+						
+						const generated: any[] = this.parseScript(
+							`Puppeteer.send(Puppeteer.${functionName}(${functionArgs.join(",")}))`
+						).body;	
+							
+						parent.body.splice(index, 1, ...generated);
+						break;
+					}
+				}
+			}
+		}
 		
 		/**
 		 * Instruments the specified body of source code so that cover functions
@@ -215,100 +373,22 @@ namespace Moduless
 			if (!originalCode.includes("function " + Constants.prefix))
 				return this._instrumentedCode = originalCode;
 			
-			const program = JsParser.parseScript(originalCode, {
-				/** The flag to allow module code. */
-				module: true,
-				/** The flag to enable stage 3 support (ESNext). */
-				next: true,
-				/** The flag to enable start and end offsets to each node. */
-				ranges: true,
-				/** The flag to enable line/column location information to each node. */
-				loc: true,
-				/** The flag to attach raw property to each literal and identifier node. */
-				raw: true,
-				/** Enabled directives. */
-				directives: true,
-				/** The flag to enable implied strict mode. */
-				impliedStrict: true,
-				/** Enable lexical binding and scope tracking. */
-				lexical: true,
-				/**
-				 * Adds a source attribute in every node’s loc object 
-				 * when the locations option is `true`.
-				 */
-				source: true,
-				/** Distinguish Identifier from IdentifierPattern. */
-				identifierPattern: true
+			const program = this.parseScript(originalCode)
+			
+			const coverFunctions = this.extractCoverFunctions(program);
+			this.extractVoidStrings(coverFunctions);
+		
+			// JS Generation
+			const SourceMapGenerator = this.sourceMap && SourceMap.SourceMapGenerator.fromSourceMap(this.sourceMap);
+			
+			this._instrumentedCode = JsBuilder.generate(program as any, {
+				sourceMap: SourceMapGenerator
 			});
 			
-			const coverFunctions: ESTree.FunctionDeclaration[] = [];
-			
-			const recurseAst = (node: ESTree.Node) =>
-			{
-				if (!node || typeof node !== "object" || node.constructor !== Object)
-					return;
-				
-				if (node.type === "FunctionDeclaration")
-					if (new RegExp(`^${Constants.prefix}[A-Z]`).test(node.id?.name || ""))
-						coverFunctions.push(node);
-				
-				for (const value of Object.values(node))
-				{
-					if (Array.isArray(value))
-						for (const subNode of value)
-							recurseAst(subNode);
-					
-					else if (typeof value === "object")
-						recurseAst(value);
-				}
-			};
-			
-			for (const node of program.body)
-				recurseAst(node);
-			
-			const splits: { 
-				position: number; 
-				functionName: string;
-				functionPosition?: ESTree.Position
-		 	}[] = [];
-			for (const decl of coverFunctions)
-			{
-				const funcId = decl.id;
-				
-				if (!funcId)
-					continue;
-				
-				splits.push({
-					position: decl.end || originalCode.length,
-					functionName: funcId.name,
-					functionPosition: funcId.loc?.start
-				});
-			}
-			
-			const outChunks: string[] = [];
-			let lastPosition = 0;
-			
-			for (let i = -1; ++i < splits.length;)
-			{
-				const { position, functionName } = splits[i];
-				const sourceChunk = originalCode.slice(lastPosition, position);
-				const injectChunk = `;Moduless.addCover(${functionName});`;
-				outChunks.push(sourceChunk, injectChunk);
-				lastPosition = position;
-			}
-			
-			outChunks.push(originalCode.slice(lastPosition));
-			this._instrumentedCode = outChunks.join("");
-			
-			this._coverFunctionNames = [];
-			this._coverFunctionPositions = {};
-			for (const item of splits)
-			{
-				this._coverFunctionNames.push(item.functionName);
-				this._coverFunctionPositions[item.functionName] = item.functionPosition;
-			}
+			this._instrumentedCode += `//# sourceMappingURL=data:application/json;base64,${base64Encode(JSON.stringify(SourceMapGenerator))}`
 		}
 		
+		/** */
 		resolveSymbol(coverFunctionName: string)
 		{
 			const pos = this._coverFunctionPositions[coverFunctionName];

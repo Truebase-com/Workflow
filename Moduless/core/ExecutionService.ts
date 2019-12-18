@@ -241,7 +241,7 @@ namespace Moduless
 		/** */
 		private async setupPuppeteerListeners()
 		{
-			Vs.debug.onDidTerminateDebugSession(e =>
+			Vs.debug.onDidTerminateDebugSession(() =>
 			{
 				this.stopDebugging();
 			});
@@ -296,6 +296,13 @@ namespace Moduless
 					const pages = await this.activeBrowser.pages();
 					const page = pages[0];
 					this.activePage = page;
+					
+					page.exposeFunction("puppeteerEval", (args: [string, ...any[]]) => 
+					{
+						const fn = eval(args.shift());
+						return fn(page, ...args);
+					});
+					
 					resolve();
 				})
 				.catch(reason =>
