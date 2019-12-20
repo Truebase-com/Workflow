@@ -311,8 +311,6 @@ namespace Moduless
 					const functionName = (parsed.callee as ESTree.Identifier).name;
 					const functionArgs = parsed.arguments.map((v) => (v as ESTree.Literal).raw);
 					
-					
-					
 					const contextData = {
 						coverName,
 						projectPath: this.projectPath
@@ -347,7 +345,7 @@ namespace Moduless
 						}
 						case "ArrowFunctionExpression":
 						{
-							parent.body = awaitExpression;
+							parent.body = awaitExpression.argument;
 							break;
 						}
 						case "BlockStatement":

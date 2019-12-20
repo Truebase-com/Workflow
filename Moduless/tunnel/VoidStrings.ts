@@ -95,7 +95,7 @@ namespace Puppeteer
           context.path.join(context.projectPath, "../captures", `${context.coverName}-diff.png`)
         , PNG.sync.write(diff))
         
-        return result;
+        return result === 0;
       } 
     ];
   }
