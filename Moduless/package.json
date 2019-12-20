@@ -44,6 +44,8 @@
 		"@types/astring": "^1.3.0",
 		"astring": "^1.4.3",
 		"meriyah": "^1.9.3",
+		"pixelmatch": "^5.1.0",
+		"pngjs": "^3.4.0",
 		"portchecker": "^0.1.2",
 		"puppeteer": "^2.0.0",
 		"source-map": "^0.7.3",

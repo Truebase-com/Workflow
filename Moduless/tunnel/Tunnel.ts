@@ -43,7 +43,7 @@ namespace Moduless
 		
 		try
 		{
-			coverReturnValue = coverFn();
+			coverReturnValue = await coverFn();
 		}
 		catch (e)
 		{
@@ -80,7 +80,7 @@ namespace Moduless
 			
 			try
 			{
-				result = verifierFn();
+				result = await verifierFn();
 			}
 			catch (e)
 			{

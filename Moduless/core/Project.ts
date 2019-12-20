@@ -47,6 +47,10 @@ namespace Moduless
 			 */
 			readonly filePath: string,
 			/**
+			 * 
+			 */
+			readonly projectPath: string,
+			/**
 			 * Stores a fully-qualified version of the outFile value specified
 			 * in the compilerOptions section of the corresponding config file.
 			 * 
@@ -248,6 +252,7 @@ namespace Moduless
 				identifierPattern: true
 			});
 		}
+		
 		/** */
 		private extractCoverFunctions(program: ESTree.Program)
 		{
@@ -276,67 +281,87 @@ namespace Moduless
 			
 			return coverFunctions;
 		}
+		
 		/** */
-		private extractVoidStrings(nodes: ESTree.Node[])
+		private extractVoidStrings(nodes: ESTree.FunctionDeclaration[])
 		{
-			const voidStrings = nodes.map(cover => 
-				this.AstWalker<ESTree.UnaryExpression>(
-					cover, 
-					node => node.type === "UnaryExpression" && node.operator === "void"
-				).filter((v) => v.argument.type === "Literal")
-			).flat();
+			const voidStrings = nodes.map(node => [
+					this.AstWalker<ESTree.UnaryExpression>(
+						node, 
+						node => node.type === "UnaryExpression" && node.operator === "void"
+					).filter((v) => v.argument.type === "Literal"),
+					node.id?.name
+				]
+			) as [ESTree.UnaryExpression[], string | undefined][];
 			
-			for (const expr of voidStrings)
+			for (const voidString of voidStrings)
 			{
-				const parent = this.parentMap.get(expr);
-				if (!parent)
-					continue;
-				
-				const literal = (expr.argument as ESTree.Literal).value as string;
-				const parsed = (
-					this.parseScript(literal).body[0] as ESTree.ExpressionStatement
-				).expression as ESTree.CallExpression;
-				
-				const functionName = (parsed.callee as ESTree.Identifier).name;
-				const functionArgs = parsed.arguments.map((v) => (v as ESTree.Literal).raw);
-					
-				switch (parent.type)
+				const [nodeExpr, coverName] = voidString;
+				for (const expr  of nodeExpr)
 				{
-					case "CallExpression":
-					{
-						const index = parent.arguments.indexOf(expr as any);
-						if (index < 0)
-							continue;
+					const parent = this.parentMap.get(expr);
+					if (!parent)
+						continue;
+					
+					const literal = (expr.argument as ESTree.Literal).value as string;
+					const parsed = (
+						this.parseScript(literal).body[0] as ESTree.ExpressionStatement
+					).expression as ESTree.CallExpression;
+					
+					const functionName = (parsed.callee as ESTree.Identifier).name;
+					const functionArgs = parsed.arguments.map((v) => (v as ESTree.Literal).raw);
+					
+					
+					
+					const contextData = {
+						coverName,
+						projectPath: this.projectPath
+					};
 						
+					const context = JSON.stringify(contextData);
+					
+					if (parent.type === "CallExpression")
 						functionArgs.push("e");
-							
-						const generated = (this.parseScript(
-							`e => Puppeteer.send(Puppeteer.${functionName}(${functionArgs.join(",")}))`
-						).body[0] as ESTree.ExpressionStatement).expression;	
-							
-						parent.arguments.splice(index, 1, generated);
-						break;
-					}
-					case "ExpressionStatement":
+					
+					const fnExpression = (this.parseScript(`
+						async (e) => await Puppeteer.send(${context}, Puppeteer.${functionName}(${functionArgs.join(",")}))
+					`).body[0] as ESTree.ExpressionStatement).expression as ESTree.ArrowFunctionExpression;
+					
+					const awaitExpression = (fnExpression.body as ESTree.AwaitExpression);
+					
+					switch (parent.type)
 					{
-						parent.expression = this.parseScript(
-							`Puppeteer.send(Puppeteer.${functionName}(${functionArgs.join(",")}))`
-						) as unknown as ESTree.CallExpression;
-						
-						break;	
-					}
-					case "BlockStatement":
-					{
-						const index = parent.body.indexOf(expr as any);
-						if (index < 0)
-							continue;
-						
-						const generated: any[] = this.parseScript(
-							`Puppeteer.send(Puppeteer.${functionName}(${functionArgs.join(",")}))`
-						).body;	
-							
-						parent.body.splice(index, 1, ...generated);
-						break;
+						case "CallExpression":
+						{
+							const index = parent.arguments.indexOf(expr as any);
+							if (index < 0)
+								continue;
+								
+							parent.arguments.splice(index, 1, fnExpression);
+							break;
+						}
+						case "ExpressionStatement":
+						{
+							parent.expression = awaitExpression;
+							break;	
+						}
+						case "ArrowFunctionExpression":
+						{
+							parent.body = awaitExpression;
+							break;
+						}
+						case "BlockStatement":
+						{
+							const index = parent.body.indexOf(expr as any);
+							if (index < 0)
+								continue;
+								
+							parent.body.splice(index, 1, awaitExpression as any);
+							break;
+						}
+						default: 
+							debugger;
+							break;
 					}
 				}
 			}

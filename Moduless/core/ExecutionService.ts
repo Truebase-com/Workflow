@@ -297,11 +297,18 @@ namespace Moduless
 					const page = pages[0];
 					this.activePage = page;
 					
-					page.exposeFunction("puppeteerEval", (args: [string, ...any[]]) => 
-					{
-						const fn = eval(args.shift());
-						return fn(page, ...args);
-					});
+					page.exposeFunction("puppeteerEval", 
+						(contextData: {coverName: string}, args: [string, ...any[]]) => 
+						{
+							const fn = eval(args.shift());
+							const context = {
+								page,
+								fs: Fs,
+								path: Path,
+								...contextData
+							};
+							return fn(context, ...args);
+						});
 					
 					resolve();
 				})

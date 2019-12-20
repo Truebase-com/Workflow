@@ -107,6 +107,7 @@ namespace Moduless
 			const project = new Project(
 				tsConfig.name,
 				targetConfigFilePath,
+				targetProjectDir,
 				outFile,
 				scripts,
 				references,
