@@ -158,7 +158,7 @@ namespace Moduless
 			if (projectViaConfig)
 				return projectViaConfig;
 			
-			const projectEntries = Array.from(this.projects.entries())
+			const projectEntries = Array.from(this.projects.entries());
 			
 			for (const [path, project] of projectEntries)
 				if (project.outFile === filePath)
