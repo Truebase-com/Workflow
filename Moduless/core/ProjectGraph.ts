@@ -174,9 +174,9 @@ namespace Moduless
 				
 				for (const projectConfigPath of projectConfigPaths)
 				{
-					const projectConfigDir = Path.dirname(fileDir);
+					const projectConfigDir = Path.dirname(projectConfigPath);
 					
-					if (fileDir.startsWith(projectConfigDir))
+					if (fileDir.startsWith(projectConfigDir + Path.sep))
 						return this.projects.get(projectConfigPath) || null;
 				}
 			}
