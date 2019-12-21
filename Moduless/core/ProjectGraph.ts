@@ -167,14 +167,18 @@ namespace Moduless
 			const ext = Path.extname(filePath);
 			if (ext === ".ts" || ext === ".js")
 			{
-				const inputDir = Path.dirname(filePath) + "/";
-				const projectPaths = projectEntries
+				const fileDir = Path.dirname(filePath) + "/";
+				const projectConfigPaths = projectEntries
 					.map(v => v[0])
 					.sort((a, b) => b.length - a.length);
 				
-				for (const projectPath of projectPaths)
-					if (projectPath.startsWith(inputDir))
-						return this.projects.get(projectPath) || null;
+				for (const projectConfigPath of projectConfigPaths)
+				{
+					const projectConfigDir = Path.dirname(fileDir);
+					
+					if (fileDir.startsWith(projectConfigDir))
+						return this.projects.get(projectConfigPath) || null;
+				}
 			}
 			
 			return null;
