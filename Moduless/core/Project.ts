@@ -198,7 +198,7 @@ namespace Moduless
 			
 			const recurseAst = (node: ESTree.Node, parent?: ESTree.Node) =>
 			{
-				if (!node || typeof node !== "object" || node.constructor !== Object)
+				if (!node || typeof node !== "object")
 					return;
 				
 				if (condition(node))
@@ -223,34 +223,14 @@ namespace Moduless
 			return nodes;
 		}
 		
+		scriptMap = new WeakMap();
+		
 		/** */
 		private parseScript(script: string)
 		{
-			return JsParser.parseScript(script, {
-				/** The flag to allow module code. */
-				module: true,
-				/** The flag to enable stage 3 support (ESNext). */
-				next: true,
-				/** The flag to enable start and end offsets to each node. */
-				ranges: true,
-				/** The flag to enable line/column location information to each node. */
-				loc: true,
-				/** The flag to attach raw property to each literal and identifier node. */
-				raw: true,
-				/** Enabled directives. */
-				directives: true,
-				/** The flag to enable implied strict mode. */
-				impliedStrict: true,
-				/** Enable lexical binding and scope tracking. */
-				lexical: true,
-				/**
-				 * Adds a source attribute in every node’s loc object 
-				 * when the locations option is `true`.
-				 */
-				source: true,
-				/** Distinguish Identifier from IdentifierPattern. */
-				identifierPattern: true
-			});
+			const ast = JsBuilder.parse(script);
+			this.scriptMap.set(ast.program, ast);
+			return ast.program;
 		}
 		
 		/** */
@@ -258,7 +238,8 @@ namespace Moduless
 		{
 			const coverFunctions: ESTree.FunctionDeclaration[] = 
 				this.AstWalker(program, 
-					node => node.type === "FunctionDeclaration" 
+					node => 
+						node.type === "FunctionDeclaration" 
 						&& new RegExp(`^${Constants.prefix}[A-Z]`).test(node.id?.name || ""));
 			
 			this._coverFunctionNames = [];
@@ -322,7 +303,7 @@ namespace Moduless
 						functionArgs.push("e");
 					
 					const fnExpression = (this.parseScript(`
-						async (e) => await Puppeteer.send(${context}, Puppeteer.${functionName}(${functionArgs.join(",")}))
+						async (e) => await VoidStrings.send(${context}, VoidStrings.${functionName}(${functionArgs.join(",")}))
 					`).body[0] as ESTree.ExpressionStatement).expression as ESTree.ArrowFunctionExpression;
 					
 					const awaitExpression = (fnExpression.body as ESTree.AwaitExpression);
@@ -396,19 +377,17 @@ namespace Moduless
 			if (!originalCode.includes("function " + Constants.prefix))
 				return this._instrumentedCode = originalCode;
 			
-			const program = this.parseScript(originalCode)
+			const program = this.parseScript(originalCode);
 			
 			const coverFunctions = this.extractCoverFunctions(program);
 			this.extractVoidStrings(coverFunctions);
 		
 			// JS Generation
-			const SourceMapGenerator = this.sourceMap && SourceMap.SourceMapGenerator.fromSourceMap(this.sourceMap);
+			//const SourceMapGenerator = this.sourceMap && SourceMap.SourceMapGenerator.fromSourceMap(this.sourceMap);
 			
-			this._instrumentedCode = JsBuilder.generate(program as any, {
-				sourceMap: SourceMapGenerator
-			});
+			this._instrumentedCode = JsBuilder.print(this.scriptMap.get(program)).code;
 			
-			this._instrumentedCode += `//# sourceMappingURL=data:application/json;base64,${base64Encode(JSON.stringify(SourceMapGenerator))}`
+			//this._instrumentedCode += `//# sourceMappingURL=data:application/json;base64,${base64Encode(JSON.stringify(SourceMapGenerator))}`
 		}
 		
 		/** */

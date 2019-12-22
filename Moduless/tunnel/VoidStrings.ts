@@ -10,7 +10,7 @@ interface Context
   path: typeof import("path");
 }
 
-namespace Puppeteer 
+namespace VoidStrings 
 {
   /**
    * @internal
@@ -42,7 +42,7 @@ namespace Puppeteer
       text
     ];
   }
-  
+   
   /** */
   export function hotkey(text: string)
   {
@@ -58,7 +58,7 @@ namespace Puppeteer
   }
   
   /** */
-  export function snapshot()
+  export function baselineSnapshot()
   {
     return [
       async (context: Context) => 
@@ -73,7 +73,7 @@ namespace Puppeteer
   }
   
   /** */
-  export function compareSnapshot()
+  export function snapshot()
   {
     return [
       async (context: Context) => 

@@ -51,5 +51,8 @@ namespace Moduless
 		parse(source: string, options: IParserOptions | void): ESTree.Program;
 	} = require("meriyah");
 	
-	export const JsBuilder = <typeof import("astring")>require("astring");
+	export const JsBuilder: {
+		parse: Function,
+		print: Function
+	} = require("recast");
 }
