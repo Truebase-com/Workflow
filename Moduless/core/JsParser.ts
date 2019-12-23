@@ -45,14 +45,7 @@ namespace Moduless
 	};
 	
 	declare var require: any;
-	export const JsParser: {
-		parseScript(source: string, options?: IParserOptions | void): ESTree.Program;
-		parseModule(source: string, options: IParserOptions | void): ESTree.Program;
-		parse(source: string, options: IParserOptions | void): ESTree.Program;
-	} = require("meriyah");
-	
-	export const JsBuilder: {
-		parse: Function,
-		print: Function
-	} = require("recast");
+	export const JsParser = <typeof import("meriyah")>require("meriyah");
+
+	export const JsBuilder = <typeof import("recast")>require("recast");
 }

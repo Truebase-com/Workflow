@@ -35,9 +35,8 @@
 	"devDependencies": {
 		"@types/node": "^12.7.12",
 		"@types/puppeteer": "^2.0.0",
-		"@types/vscode": "^1.40.0",
+		"@types/vscode": "^1.41.0",
 		"@types/ws": "^6.0.4",
-		"vscode": "^1.1.36",
 		"typescript": "^3.7.2"
 	},
 	"dependencies": {
@@ -48,6 +47,7 @@
 		"pngjs": "^3.4.0",
 		"portchecker": "^0.1.2",
 		"puppeteer": "^2.0.0",
+		"recast": "^0.18.5",
 		"source-map": "^0.7.3",
 		"ws": "^7.2.0"
 	},
@@ -111,6 +111,16 @@
 				},
 				"category": "Debug",
 				"enablement": "inDebugMode"
+			},
+			{
+				"command": "moduless.snapshot",
+				"title": "Take a snapshot of current window in puppeteer",
+				"icon": {
+					"light": "icons/snapshot-light.svg",
+					"dark": "icons/snapshot-dark.svg"
+				},
+				"category": "Debug",
+				"enablement": "inDebugMode"
 			}
 		],
 		"menus": {
@@ -144,6 +154,13 @@
 					"command": "moduless.stop",
 					"group": "navigation",
 					"when": "view == moduless.covers && inDebugMode"
+				}
+			],
+			"debug/callstack/context": [
+				{
+					"command": "moduless.snapshot",
+					"group": "navigation",
+					"when": "inDebugMode"
 				}
 			],
 			"commandPalette": [

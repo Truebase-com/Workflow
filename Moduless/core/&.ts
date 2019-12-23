@@ -32,6 +32,9 @@ declare module Vs
 	export type TerminalDimensions = import("vscode").TerminalDimensions;
 	export type FileSystemWatcher = import("vscode").FileSystemWatcher;
 	export type Disposable = import("vscode").Disposable;
+	
+	export type StatusBarItem = import("vscode").StatusBarItem;
+	export type StatusBarAlignment = import("vscode").StatusBarAlignment;
 }
 
 declare module Http
@@ -71,6 +74,7 @@ const enum Commands
 	stop = "moduless.stop",
 	
 	focusCover = "moduless.focusCover",
+	snapshot = "moduless.snapshot",
 	
 	setBrowserVisible = "moduless.set-browser-visible",
 	setBrowserInvisible = "moduless.set-browser-invisible",

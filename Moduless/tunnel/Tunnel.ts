@@ -155,6 +155,17 @@ namespace Moduless
 		ws.send(endCoverMessage.toString());
 	}
 	
+	/**
+	 * 
+	 */
+	async function handleExecuteVoidMessage(message: ExecuteVoidMessage)
+	{
+		const result = await (VoidStrings).send(
+			JSON.stringify(message.context),
+			(VoidStrings as any)[message.voidName](...message.parameters)
+		);
+	}
+	
 	ws.addEventListener("message", ev =>
 	{
 		const message = Message.parse(ev.data);
@@ -165,6 +176,9 @@ namespace Moduless
 		else if (message instanceof ReloadMessage)
 			window.location.reload();
 		
+		else if (message instanceof ExecuteVoidMessage)
+			handleExecuteVoidMessage(message);
+			
 		else
 			throw new Error("Unsupported message: " + message.constructor.name);
 	});

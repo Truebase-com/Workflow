@@ -71,7 +71,7 @@ namespace Moduless
 				{
 					res.writeHead(200, {
 						"Content-Type": mime,
-						"Content-Length": result.length
+						"Content-Length": Buffer.byteLength(result)
 					});
 					
 					res.write(result);
@@ -348,7 +348,7 @@ namespace Moduless
 		}
 		
 		private activeBrowser: Pup.Browser | null = null;
-		private activePage: Pup.Page | null = null;
+		public activePage: Pup.Page | null = null;
 		
 		/** */
 		stopDebugging()

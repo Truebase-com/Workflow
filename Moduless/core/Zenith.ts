@@ -2,6 +2,8 @@
 namespace Moduless
 {
 	const disposables: Vs.Disposable[] = [];
+
+	const takeSnapshotButton = Vs.window.createStatusBarItem(); 
 	
 	/**
 	 * This method is called when the extension is activated.
@@ -25,6 +27,11 @@ namespace Moduless
 		});
 		
 		context.subscriptions.push(treeView);
+		context.subscriptions.push(takeSnapshotButton);
+		takeSnapshotButton.hide();
+		
+		takeSnapshotButton.command = Commands.snapshot;
+		takeSnapshotButton.text = "$(screen-full)";
 		
 		const registerCommand = (name: string, callback: (...args: any[]) => void) =>
 		{
@@ -44,7 +51,9 @@ namespace Moduless
 			bus.emit(new StartCoverMessage(
 				selected.containingFile,
 				selected.coverFunctionName));
+			takeSnapshotButton.show();
 		});
+		
 		
 		registerCommand(Commands.focusCover, async (project: Project, symbol: SourceMap.NullableMappedPosition) =>
 		{
@@ -56,10 +65,25 @@ namespace Moduless
 			editor.selection = new Vs.Selection(pos, pos);
 		});
 		
+		registerCommand(Commands.snapshot, async () =>
+		{	
+			const project = projectGraph.find(GlobalState.selectedCover.containingFile);
+			
+			if (!execSvc.activePage || !project) 
+				return;
+			
+			const PNG = require('pngjs').PNG;
+			const ss = PNG.sync.read(await execSvc.activePage.screenshot());
+			await Fs.promises.writeFile(
+				Path.join(project.projectPath, "../captures", `${GlobalState.selectedCover.coverFunctionName}.png`)
+			, PNG.sync.write(ss));
+		});
+		
 		registerCommand(Commands.stop, () =>
 		{
 			// Lame...
 			execSvc.stopDebugging();
+			takeSnapshotButton.hide();
 		});
 		
 		registerCommand(Commands.setBrowserVisible, () =>

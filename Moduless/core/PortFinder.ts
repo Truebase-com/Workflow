@@ -25,7 +25,7 @@ namespace Moduless
 	{
 		return new Promise(resolve =>
 		{
-			portChecker.getFirstAvailable(startAt, 65536, "localhost", (port: number) =>
+			portChecker.getFirstAvailable(startAt + Math.round(Math.random() * 1000), 65536, "localhost", (port: number) =>
 			{
 				resolve(port);
 			});

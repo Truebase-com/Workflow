@@ -15,6 +15,17 @@ namespace Moduless
 	}
 	
 	/** */
+	export class ExecuteVoidMessage extends Message
+	{
+		constructor(
+			readonly voidName: string,
+			readonly parameters: any[],
+			readonly context: Record<string, any>
+		)
+		{ super (); }
+	}
+	
+	/** */
 	export class EndCoverMessage extends Message
 	{
 		constructor(
