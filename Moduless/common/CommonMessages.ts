@@ -34,16 +34,6 @@ namespace Moduless
 			 */
 			readonly coverName: string,
 			/**
-			 * A string containing any exception message that was generated
-			 * as a result of running the cover.
-			 */
-			readonly exceptionDescription: string,
-			/**
-			 * A string array containing the entries of the stack trace of any
-			 * exception that was generated as a result of running this cover.
-			 */
-			readonly exceptionStack: string[],
-			/**
 			 * 
 			 */
 			readonly verifications: IVerificationResult[])
@@ -53,8 +43,24 @@ namespace Moduless
 	/** */
 	export interface IVerificationResult
 	{
+		/**
+		 * 
+		 */
 		readonly expression: string;
+		/**
+		 * 
+		 */
 		readonly pass: boolean;
+		/**
+		 * A string containing any exception message that was generated
+		 * as a result of running the cover.
+		 */
+		readonly exceptionDescription: string,
+		/**
+		 * A string array containing the entries of the stack trace of any
+		 * exception that was generated as a result of running this cover.
+		 */
+		readonly exceptionStack: string[],
 	}
 	
 	/**

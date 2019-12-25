@@ -1,10 +1,22 @@
 
 namespace Moduless
 {
+	/** */
+	type MaybePromise<T> = T | Promise<T>;
 	
 	/** */
-	type VerifierFn = () => boolean;
+	type VerifierFn = () => MaybePromise<boolean>;
 	
+	/** */
+	type CoverReturn = 
+		MaybePromise<
+			VerifierFn |
+			VerifierFn[] |
+			string |
+			Error |
+			undefined
+		>;
+
 	// This value is replaced before it's sent down from
 	// the server. The naming of it is therefore intentional.
 	const __wsPort__ = 10002;
@@ -26,6 +38,84 @@ namespace Moduless
 		coverRepository[coverName] = coverFn;
 	}
 	
+	/** */
+	function parseErrorStack(text?: string)
+	{
+		return (text || "")
+		.split("\n")
+		.filter(line => stackReg.test(line))
+	}
+	
+	/** */
+	function generateError(expression: string, error: Error)
+	{
+		return { 
+			expression: expression, 
+			pass: false,
+			exceptionDescription: error.message,
+			exceptionStack: parseErrorStack(error.stack)
+		}
+	}
+	
+	/** */
+	async function processCoverReturn(value: CoverReturn)
+	{
+		const verifications: IVerificationResult[] = [];
+		if (value instanceof Promise)
+			value = await value;
+			
+		if (value === void 0)
+		{
+			verifications.push(generateError("return", new Error("Expression returns undefined!")));
+		}
+		else if (typeof value === "string")
+		{
+			verifications.push(generateError("return", new Error(value)));
+		}
+		else if (value instanceof Error)
+		{
+			verifications.push(generateError("throw", value));
+		}
+		else if (value instanceof Array)
+		{
+			verifications.push(...(
+				await Promise.all(
+					value
+					.map(async v => 
+						await processCoverReturn(v)
+					)))
+				.flat()
+			);
+		}		
+		else if (value instanceof Function)
+		{
+			const newValue = await value();
+			const newName = String(value)
+												.trim()
+												.replace(verifierReg, "")
+												.trim();;
+			const error = new Error(`Verifier function returned an unexpected ${typeof newValue}(${newValue})`);
+			verifications.push({
+				expression: newName,
+				pass: !!newValue,
+				exceptionDescription: error.message,
+				exceptionStack: parseErrorStack(error.stack)
+			});
+		}
+		else 
+		{
+			const error = new Error(`Cover function returned an unexpected ${typeof value}(${value})`);
+			verifications.push({
+				expression: "return",
+				pass: !!value,
+				exceptionDescription: error.message,
+				exceptionStack: parseErrorStack(error.stack)
+			})
+		}
+		
+		return verifications;
+	}
+	
 	/**
 	 * Executes the test with the specified function name.
 	 */
@@ -35,103 +125,19 @@ namespace Moduless
 		if (typeof coverFn !== "function")
 			throw new Error("Unknown cover function: " + coverFunctionName);
 		
-		let coverReturnValue: 
-			VerifierFn | 
-			VerifierFn[] |
-			Promise<VerifierFn | VerifierFn[]> |
-			undefined;
 		
 		try
 		{
-			coverReturnValue = await coverFn();
+			const coverReturnValue = await coverFn();
+			const verifications = await processCoverReturn(coverReturnValue);
+			return new EndCoverMessage(coverFunctionName, verifications);
 		}
 		catch (e)
 		{
-			const message = createExceptionMessage(coverFunctionName, e);
-			debugger;
-			return message;
+			return new EndCoverMessage(coverFunctionName, [
+				generateError(e.name, e)
+			]);
 		}
-		
-		if (coverReturnValue === undefined)
-			return new EndCoverMessage(coverFunctionName, "", [], []);
-		
-		const maybeArray = coverReturnValue instanceof Promise ?
-			await coverReturnValue :
-			coverReturnValue;
-		
-		const verifierFns = Array.isArray(maybeArray) ? 
-			maybeArray :
-			[maybeArray];
-		
-		const verifications: IVerificationResult[] = [];
-		
-		for (const verifierFn of verifierFns)
-		{
-			const verifierFnText = String(verifierFn);
-			
-			if (typeof verifierFn !== "function" || !verifierReg.test(verifierFnText))
-			{
-				return createExceptionMessage(
-					coverFunctionName,
-					new Error("Returned verifiers are expected to be arrow functions."));
-			}
-			
-			let result: any;
-			
-			try
-			{
-				result = await verifierFn();
-			}
-			catch (e)
-			{
-				const message = createExceptionMessage(coverFunctionName, e);
-				debugger;
-				return message;
-			}
-			
-			if (![true, false, null, void 0].includes(result))
-			{
-				const returned = 
-					(result !== result) ? "NaN" :
-					Array.isArray(result) ? "array (length=" + result.length + ")" :
-					typeof result === "string" ? `string ("${result.slice(0, 100)}")` :
-					typeof result === "number" ? `number (${result})` :
-					typeof result === "bigint" ? `bigint (${result})` :
-					typeof result === "symbol" ? `symbol (${result.description || "no description"})` :
-					typeof result === "function" ? `function (${result.name})` :
-					typeof result === "object" ? `object (${result.constructor.name})` :
-					"(unknown)";
-				
-				return createExceptionMessage(
-					coverFunctionName,
-					new Error("Verifier function returned an unexpected " + returned));
-			}
-			
-			const expression = verifierFn.toString()
-				.trim()
-				.replace(verifierReg, "")
-				.trim();
-			
-			verifications.push({ expression, pass: !!result });
-		}
-		
-		return new EndCoverMessage(coverFunctionName, "", [], verifications);
-	}
-	
-	/**
-	 * 
-	 */
-	function createExceptionMessage(coverFunctionName: string, error: Error)
-	{
-		const stackLines = (error.stack || "")
-			.split("\n")
-			.filter(line => stackReg.test(line));
-		
-		return new EndCoverMessage(
-			coverFunctionName,
-			error.message,
-			stackLines,
-			[]);
 	}
 	
 	let autoRunTestOnReload = setTimeout(async () => 
