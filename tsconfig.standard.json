@@ -2,6 +2,7 @@
 	"compilerOptions": {
 		"composite": true,
 		"module": "system",
+		"moduleResolution": "node",
 		"target": "es2017",
 		"inlineSourceMap": true,
 		"inlineSources": true,
