@@ -5,7 +5,29 @@ const Http = <typeof import("http")>require("http");
 const Path = <typeof import("path")>require("path");
 const Url = <typeof import("url")>require("url");
 const Ws = <typeof import("ws")>require("ws");
-const Pup = <typeof import("puppeteer")>require("puppeteer");
+const PupExtra = <typeof import("puppeteer-extra")>require("puppeteer-extra");
+const Pup = PupExtra.default;
+
+const JsParser = <typeof import("recast")>require("recast");
+const JsParserUtils = <typeof import("recast/lib/util")>require("recast/lib/util");
+const JsBuilder = JsParser.types.builders;
+
+/*
+const PupUserPref = require("puppeteer-extra-plugin-user-preferences");
+
+Pup.use(PupUserPref({
+	userPrefs: {
+    devtools: {
+      preferences: {
+        'InspectorView.splitViewState': JSON.stringify({
+          vertical: {size: 300},
+          horizontal: {size: 0},
+        }),
+        uiTheme: '"dark"',
+      }
+    }
+	}
+}));*/
 
 declare module Vs
 {

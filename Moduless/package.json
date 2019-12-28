@@ -47,6 +47,8 @@
 		"pngjs": "^3.4.0",
 		"portchecker": "^0.1.2",
 		"puppeteer": "^2.0.0",
+		"puppeteer-extra": "^3.1.7",
+		"puppeteer-extra-plugin-user-preferences": "^2.2.2",
 		"recast": "^0.18.5",
 		"source-map": "^0.7.3",
 		"ws": "^7.2.0"

@@ -25,6 +25,8 @@ namespace Moduless
 		project: Project,
 		coverFunctionName: string,
 		index: number) => void;
+		
+	const coverFunctionRegex = new RegExp(`^${Constants.prefix}[A-Z]`);
 	
 	/**
 	 * A "Project" loosely corresponds to a tsconfig.json file.
@@ -187,48 +189,13 @@ namespace Moduless
 		}
 		
 		private sourceMap?: import("source-map").BasicSourceMapConsumer;
-		private parentMap = new WeakMap<ESTree.Node, ESTree.Node | undefined>();
-		
-		/** */
-		private AstWalker<T extends ESTree.Node>(
-			node: ESTree.Node, 
-			condition: (node: ESTree.Node) => boolean
-		){
-			const nodes: T[] = [];
-			
-			const recurseAst = (node: ESTree.Node, parent?: ESTree.Node) =>
-			{
-				if (!node || typeof node !== "object")
-					return;
-				
-				if (condition(node))
-				{
-					nodes.push(node as T);
-					this.parentMap.set(node, parent);
-				}
-				
-				for (const value of Object.values(node))
-				{
-					if (Array.isArray(value))
-						for (const subNode of value)
-							recurseAst(subNode, node);
-					
-					else if (typeof value === "object")
-						recurseAst(value, node);
-				};
-			}
-			
-			recurseAst(node);
-			
-			return nodes;
-		}
 		
 		scriptMap = new WeakMap();
 		
 		/** */
 		private parseScript(script: string)
 		{
-			const ast = JsBuilder.parse(script);
+			const ast = JsParser.parse(script);
 			this.scriptMap.set(ast.program, ast);
 			return ast.program;
 		}
@@ -236,114 +203,117 @@ namespace Moduless
 		/** */
 		private extractCoverFunctions(program: ESTree.Program)
 		{
-			const coverFunctions: ESTree.FunctionDeclaration[] = 
-				this.AstWalker(program, 
-					node => 
-						node.type === "FunctionDeclaration" 
-						&& new RegExp(`^${Constants.prefix}[A-Z]`).test(node.id?.name || ""));
+			const coverFunctions: import("ast-types").namedTypes.FunctionDeclaration[] = [];
 			
-			this._coverFunctionNames = [];
-			this._coverFunctionPositions = {};
+			const cFN = this._coverFunctionNames = [] as string[];
+			const cFP = this._coverFunctionPositions = {} as Record<string, ESTree.Position | undefined>;
 			
-			for (const cover of coverFunctions)
-			{
-				const name = cover.id?.name;
-				if (!name)
-					continue;
+			JsParser.visit(program, {
+				visitFunctionDeclaration(path)
+				{
+					const node = path.node;
+					const id = node.id;
+					const name = id.name;
 					
-				this._coverFunctionNames.push(name);
-				this._coverFunctionPositions[name] = cover.loc?.start;
-				
-				const parsed = this.parseScript(`Moduless.addCover(${name});`);
-				const parent = this.parentMap.get(cover);
-				if (parent)
-					(parent as ESTree.BlockStatement).body.push(...(parsed.body as any[]));
-			}
+					if (coverFunctionRegex.test(name))
+					{
+						coverFunctions.push(node);
+						path.insertAfter(
+							`Moduless.addCover(${name})`
+						);
+						
+						cFN.push(name);
+						cFP[name] = node.loc?.start;
+					}
+					this.traverse(path);
+				}
+			});
 			
 			return coverFunctions;
 		}
 		
 		/** */
-		private extractVoidStrings(nodes: ESTree.FunctionDeclaration[])
-		{
-			const voidStrings = nodes.map(node => [
-					this.AstWalker<ESTree.UnaryExpression>(
-						node, 
-						node => node.type === "UnaryExpression" && node.operator === "void"
-					).filter((v) => v.argument.type === "Literal"),
-					node.id?.name
-				]
-			) as [ESTree.UnaryExpression[], string | undefined][];
-			
-			for (const voidString of voidStrings)
-			{
-				const [nodeExpr, coverName] = voidString;
-				for (const expr  of nodeExpr)
-				{
-					const parent = this.parentMap.get(expr);
-					if (!parent)
-						continue;
-					
-					const literal = (expr.argument as ESTree.Literal).value as string;
-					const parsed = (
-						this.parseScript(literal).body[0] as ESTree.ExpressionStatement
-					).expression as ESTree.CallExpression;
-					
-					const functionName = (parsed.callee as ESTree.Identifier).name;
-					const functionArgs = parsed.arguments.map((v) => (v as ESTree.Literal).raw);
-					
-					const contextData = {
-						coverName,
-						projectPath: this.projectPath
-					};
-						
-					const context = JSON.stringify(contextData);
-					
-					if (parent.type === "CallExpression")
-						functionArgs.push("e");
-					
-					const fnExpression = (this.parseScript(`
-						async (e) => await VoidStrings.send(${context}, VoidStrings.${functionName}(${functionArgs.join(",")}))
-					`).body[0] as ESTree.ExpressionStatement).expression as ESTree.ArrowFunctionExpression;
-					
-					const awaitExpression = (fnExpression.body as ESTree.AwaitExpression);
-					
-					switch (parent.type)
+		private extractVoidStrings(nodes: import("ast-types").namedTypes.FunctionDeclaration[])
+		{	
+			const project = this;
+			for (const coverNode of nodes)
+				JsParser.visit(coverNode, {
+					visitUnaryExpression(path)
 					{
-						case "CallExpression":
+						const node = path.node;
+						const operator = node.operator;
+						const expression = node.argument as ESTree.Literal;
+						if (operator === "void" && expression.type === "Literal")
 						{
-							const index = parent.arguments.indexOf(expr as any);
-							if (index < 0)
-								continue;
+							const parent = path.parent.node as (
+								ESTree.CallExpression |
+								ESTree.ExpressionStatement |
+								ESTree.ArrowFunctionExpression |
+								ESTree.BlockStatement);
 								
-							parent.arguments.splice(index, 1, fnExpression);
-							break;
+							const contextData = {
+								coverName: coverNode.id?.name,
+								projectPath: project.projectPath
+							};
+						
+							const program = project.parseScript(expression.value as string);
+							const parsed = program.body[0].expression as ESTree.CallExpression;
+							
+							const functionName = (parsed.callee as ESTree.Identifier).name;
+							
+							const awaitExpression = JsBuilder.awaitExpression(
+								JsBuilder.callExpression(
+									JsBuilder.memberExpression(
+										JsBuilder.identifier("VoidStrings"),
+										JsBuilder.identifier("Eval")
+									),
+									[
+										JsBuilder.stringLiteral(JSON.stringify(contextData)),
+										JsBuilder.stringLiteral(functionName),
+										...(parsed.arguments as any[])
+									]
+								)
+							);
+							
+							const fnExpression = JsBuilder.arrowFunctionExpression([
+								JsBuilder.identifier("e")
+							], awaitExpression);
+									
+							switch (parent.type)
+							{
+								case "CallExpression":
+								{
+									((fnExpression.body as ESTree.AwaitExpression)
+										.argument as ESTree.CallExpression)
+										.arguments
+										.push(JsBuilder.identifier("e"));
+										
+									path.replace(fnExpression);
+									break;
+								}
+								case "ExpressionStatement":
+								{
+									path.replace(awaitExpression);
+									break;	
+								}
+								case "ArrowFunctionExpression":
+								{
+									path.replace(awaitExpression.argument as any);
+									break;
+								}
+								case "BlockStatement":
+								{
+									path.replace(awaitExpression);
+									break;
+								}
+								default: 
+									debugger;
+									break;
+							}
 						}
-						case "ExpressionStatement":
-						{
-							parent.expression = awaitExpression;
-							break;	
-						}
-						case "ArrowFunctionExpression":
-						{
-							parent.body = awaitExpression.argument;
-							break;
-						}
-						case "BlockStatement":
-						{
-							const index = parent.body.indexOf(expr as any);
-							if (index < 0)
-								continue;
-								
-							parent.body.splice(index, 1, awaitExpression as any);
-							break;
-						}
-						default: 
-							debugger;
-							break;
+						this.traverse(path);
 					}
-				}
-			}
+				});
 		}
 		
 		/**
@@ -353,41 +323,36 @@ namespace Moduless
 		private async updateProjectCode()
 		{
 			const originalCode = Fs.readFileSync(this.outFile).toString();
+			const [ code, sourceMapBase64 ] = originalCode.split("//# sourceMappingURL=data:application/json;base64,");
 			
-			const sourceMapIndex = originalCode.lastIndexOf("\n");
-			const lastLine = originalCode.substr(sourceMapIndex + 1);
-			const [ header, base64 ] = lastLine.split(",");
-			if (header === "//# sourceMappingURL=data:application/json;base64")
-			{
-				try {
-					const parsed = JSON.parse(base64Decode(base64));
-					const sourceMap = await new SourceMap.SourceMapConsumer(parsed);
-					
-					if (this.sourceMap)
-						this.sourceMap.destroy();
-						
-					this.sourceMap = sourceMap;
-				}
-				catch (ex)
-				{
-					console.error(ex);
-				}
-			}
+			const parsedSourceMap = JSON.parse(base64Decode(sourceMapBase64));
+			const sourceMap = await new SourceMap.SourceMapConsumer(parsedSourceMap);
 			
-			if (!originalCode.includes("function " + Constants.prefix))
-				return this._instrumentedCode = originalCode;
+			if (this.sourceMap)
+				this.sourceMap.destroy();
+				
+			this.sourceMap = sourceMap;
 			
-			const program = this.parseScript(originalCode);
+			if (!code.includes("function " + Constants.prefix))
+				return this._instrumentedCode = code;
+				
+			const program = JsParser.parse(code, {
+				sourceFileName: Path.basename(this.outFile)
+			});
 			
 			const coverFunctions = this.extractCoverFunctions(program);
 			this.extractVoidStrings(coverFunctions);
-		
-			// JS Generation
-			//const SourceMapGenerator = this.sourceMap && SourceMap.SourceMapGenerator.fromSourceMap(this.sourceMap);
 			
-			this._instrumentedCode = JsBuilder.print(this.scriptMap.get(program)).code;
+			const jsCode = JsParser.print(program, {
+				sourceMapName: "map.json"
+			});
 			
-			//this._instrumentedCode += `//# sourceMappingURL=data:application/json;base64,${base64Encode(JSON.stringify(SourceMapGenerator))}`
+			const composedMap = JsParserUtils.composeSourceMaps(parsedSourceMap, jsCode.map);
+			
+			this._instrumentedCode = jsCode.code + 
+				"//# sourceMappingURL=data:application/json;base64," + 
+				base64Encode(JSON.stringify(composedMap));
+			
 		}
 		
 		/** */

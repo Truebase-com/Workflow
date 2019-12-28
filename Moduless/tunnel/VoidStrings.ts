@@ -17,6 +17,15 @@ namespace VoidStrings
 	/**
 	 * @internal
 	 */
+	export function Eval(contextData: string, functionName: string, args: any[])
+	{
+		const result = ((VoidStrings as any)[functionName] as Function).apply(null, args);
+		return send(contextData, result);
+	}
+	
+	/**
+	 * @internal
+	 */
 	export function send(contextData: string, args?: [(context: Context) => void, ...any[]])
 	{
 		if (args)
