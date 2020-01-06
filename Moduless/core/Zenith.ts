@@ -106,17 +106,14 @@ namespace Moduless
 			GlobalState.isDevtoolsShown = false;
 		});
 		
-		const tasks = await Vs.tasks.fetchTasks();
-		const mainWatchTask = tasks.find(task =>
-		{
-			const def = task.definition as ITypeScriptTaskDefinition;
-			return def.type === "typescript" &&
-				def.option === "watch" &&
-				def.tsconfig === "tsconfig.json";
-		});
+		const task = new Vs.Task(
+			{ type: 'typescript', task: 'compile' },
+			'compile',
+			'typescript',
+			new Vs.ShellExecution('tsc -b -w'));
 		
-		if (mainWatchTask)
-			Vs.tasks.executeTask(mainWatchTask);
+		if (task)
+			await Vs.tasks.executeTask(task);
 		
 		bus.emit(new InitializeMessage());
 	}
@@ -124,7 +121,7 @@ namespace Moduless
 	/**
 	 * This method is called when the extension is deactivated.
 	 */
-	function deactivate(context: Vs.ExtensionContext)
+	function deactivate()
 	{
 		// This should probably shut down the server.
 		
@@ -132,13 +129,6 @@ namespace Moduless
 			disposable.dispose();
 	}
 	
-	/** */
-	interface ITypeScriptTaskDefinition
-	{
-		option: "watch" | "build";
-		tsconfig: string;
-		type: string;
-	}
 	
 	exports.activate = activate;
 	exports.deactivate = deactivate;
