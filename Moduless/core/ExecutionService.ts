@@ -36,11 +36,10 @@ namespace Moduless
 				const urlParsed = Url.parse(req.url || "");
 				const query = urlParsed.query;
 				const path = urlParsed.path || "";
+				const relatedProject = this.projectGraph.find(path);
 				
 				let mime: string = "";
 				let result: string | Buffer = "";
-				
-				const relatedProject = this.projectGraph.find(path);
 				
 				if (relatedProject)
 				{
@@ -70,8 +69,7 @@ namespace Moduless
 				if (result)
 				{
 					res.writeHead(200, {
-						"Content-Type": mime,
-						"Content-Length": result.length
+						"Content-Type": mime
 					});
 					
 					res.write(result);

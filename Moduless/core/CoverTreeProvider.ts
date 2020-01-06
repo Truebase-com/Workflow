@@ -235,6 +235,7 @@ namespace Moduless
 		get command(): Vs.Command
 		{
 			const symbol = this.project.resolveSymbol(this.coverFunctionName)!;
+			
 			return {
 				command: Commands.focusCover,
 				title: "focus",

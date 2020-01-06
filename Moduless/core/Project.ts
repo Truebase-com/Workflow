@@ -190,7 +190,7 @@ namespace Moduless
 		 */
 		private async updateProjectCode()
 		{
-			const originalCode = Fs.readFileSync(this.outFile).toString();
+			const originalCode = Fs.readFileSync(this.outFile, "utf8").toString();
 			
 			const sourceMapIndex = originalCode.lastIndexOf("\n");
 			const lastLine = originalCode.substr(sourceMapIndex + 1);
@@ -271,6 +271,7 @@ namespace Moduless
 				functionName: string;
 				functionPosition?: ESTree.Position
 		 	}[] = [];
+			 
 			for (const decl of coverFunctions)
 			{
 				const funcId = decl.id;
@@ -302,6 +303,7 @@ namespace Moduless
 			
 			this._coverFunctionNames = [];
 			this._coverFunctionPositions = {};
+			
 			for (const item of splits)
 			{
 				this._coverFunctionNames.push(item.functionName);
@@ -309,10 +311,13 @@ namespace Moduless
 			}
 		}
 		
+		/** */
 		resolveSymbol(coverFunctionName: string)
 		{
 			const pos = this._coverFunctionPositions[coverFunctionName];
-			if (!pos) return null;
+			if (!pos)
+				return null;
+			
 			const result = this.sourceMap?.originalPositionFor(pos);
 			return result || null;
 		}
