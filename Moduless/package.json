@@ -28,8 +28,6 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -watch -p ./tsconfig.watch.json",
-		"postinstall": "node ./node_modules/vscode/bin/install",
-		"test": "npm run compile && node ./node_modules/vscode/bin/test",
 		"reload": "vsce package && (code --install-extension moduless-2.0.0.vsix & code-insiders --install-extension moduless-2.0.0.vsix)"
 	},
 	"devDependencies": {
@@ -40,9 +38,6 @@
 		"typescript": "^3.7.2"
 	},
 	"dependencies": {
-		"@types/astring": "^1.3.0",
-		"astring": "^1.4.3",
-		"meriyah": "^1.9.3",
 		"pixelmatch": "^5.1.0",
 		"pngjs": "^3.4.0",
 		"portchecker": "^0.1.2",
