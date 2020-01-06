@@ -10,9 +10,23 @@ namespace Moduless
 	{
 		constructor(bus: MessageBus)
 		{
-			this.decorationType = Vs.window.createTextEditorDecorationType({
+			const guideBg = new Vs.ThemeColor("editorIndentGuide.background");
+			const editorBg = new Vs.ThemeColor("editor.background");
+			
+			this.lineDecoration = Vs.window.createTextEditorDecorationType({
 				backgroundColor: "rgba(0, 0, 0, 0.033)",
-				isWholeLine: true
+				isWholeLine: true,
+				borderWidth: "0 0 0 1px",
+				borderStyle: "solid",
+				borderColor: guideBg
+			});
+			
+			this.indentDecoration = Vs.window.createTextEditorDecorationType({
+				backgroundColor: editorBg,
+				isWholeLine: false,
+				borderWidth: "0 0 0 1px",
+				borderStyle: "solid",
+				borderColor: guideBg
 			});
 			
 			Vs.window.onDidChangeVisibleTextEditors(e => e.map(v => this.decorate(v.document)));
@@ -50,7 +64,10 @@ namespace Moduless
 		}
 		
 		/** */
-		private readonly decorationType: Vs.TextEditorDecorationType;
+		private readonly lineDecoration: Vs.TextEditorDecorationType;
+		
+		/** */
+		private readonly indentDecoration: Vs.TextEditorDecorationType;
 		
 		/** */
 		private decorate(textDocument: Vs.TextDocument)
@@ -62,7 +79,8 @@ namespace Moduless
 				return;
 			
 			const sourceCode = editor.document.getText();
-			const decorationsArray: Vs.DecorationOptions[] = [];
+			const lineDecorations: Vs.DecorationOptions[] = [];
+			const indentDecorations: Vs.DecorationOptions[] = [];
 			const sourceCodeLines = sourceCode.split("\n");
 			
 			for (let lineNum = 0; lineNum < sourceCodeLines.length; lineNum++)
@@ -72,29 +90,35 @@ namespace Moduless
 				if (coverName === "")
 					continue;
 				
-				const range = new Vs.Range(
-					new Vs.Position(lineNum, 0),
-					new Vs.Position(lineNum, 0)
-				);
+				const indentSize = lineText.length - lineText.trimLeft().length;
 				
-				const decoration: Vs.DecorationOptions = {
-					range,
+				lineDecorations.push({
+					range: new Vs.Range(
+						new Vs.Position(lineNum, indentSize),
+						new Vs.Position(lineNum, lineText.length)
+					),
 					renderOptions: {
 						after: {
-							contentText: "	Cover function",
 							color: new Vs.ThemeColor("descriptionForeground"),
-							fontStyle: "italic"
+							fontStyle: "italic",
+							contentText: " Cover Function"
 						}
 					}
-				};
+				});
 				
-				decorationsArray.push(decoration);
+				indentDecorations.push({
+					range: new Vs.Range(
+						new Vs.Position(lineNum, 0),
+						new Vs.Position(lineNum, indentSize),
+					),
+				});
 			}
 			
-			if (decorationsArray.length < 1)
+			if (lineDecorations.length < 1)
 				return;
 			
-			editor.setDecorations(this.decorationType, decorationsArray);
+			editor.setDecorations(this.lineDecoration, lineDecorations);
+			editor.setDecorations(this.indentDecoration, indentDecorations);
 			this.filesWithCovers.push(textDocument.uri.fsPath);
 		}
 		
