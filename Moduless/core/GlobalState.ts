@@ -12,26 +12,16 @@ namespace Moduless
 			this._selectedCover = coverText ?
 				Message.parse<SelectCoverMessage>(coverText) :
 				new SelectCoverMessage("", "");
-			
-			const metricsText = await this.retrieve("browserWindowMetrics");
-			this._browserWindowMetrics = metricsText ?
-				Message.parse<WindowMetricsMessage>(metricsText) :
-				new WindowMetricsMessage(0, 0, 1024, 768);
-			
+						
 			this.isBrowserShown = await this.retrieve(States.isBrowserShown) === "true";
 			this.isDevtoolsShown = await this.retrieve(States.isDevtoolsShown) === "true";
-			
-			bus.listen(WindowMetricsMessage, async msg =>
-			{
-				this.setBrowserWindowMetrics(msg);
-			});
 			
 			bus.listen(SelectCoverMessage, async msg =>
 			{
 				this.setSelectedCover(msg);
 			});
 		}
-		private globalStoragePath: string = "";
+		public globalStoragePath: string = "";
 		
 		/**
 		 * Gets or sets the name of the function to run when
@@ -51,27 +41,6 @@ namespace Moduless
 		{
 			this._selectedCover = value;
 			this.store("selectedCover", value);
-		}
-		
-		/**
-		 * Gets or sets a WindowMetricsMessage that stores information
-		 * about the pixel dimensions of the browser window to launch
-		 * when starting a debugging session.
-		 */
-		get browserWindowMetrics()
-		{
-			if (!this._browserWindowMetrics)
-				this._browserWindowMetrics = new WindowMetricsMessage(0, 0, 1024, 768);
-			
-			return this._browserWindowMetrics;
-		}
-		private _browserWindowMetrics: WindowMetricsMessage | null = null;
-		
-		/** */
-		private setBrowserWindowMetrics(value: WindowMetricsMessage)
-		{
-			this._browserWindowMetrics = value;
-			this.store("browserWindowMetrics", value);
 		}
 		
 		/**

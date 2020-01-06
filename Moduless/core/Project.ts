@@ -200,6 +200,60 @@ namespace Moduless
 			return ast.program;
 		}
 		
+		private injectOscilloscopeCaptures(
+			node: 
+				import("ast-types").namedTypes.FunctionDeclaration | 
+				import("ast-types").namedTypes.FunctionExpression ,
+			defaultName = "Anonymous"
+		) {	
+			
+			const name = `${this.name}:${node.id?.name || defaultName}`;
+			
+			const args = [
+				"__Moduless__fId___",
+				"this",
+				`"${name}"`,
+				...node.params.map(v => 
+					((v.type === "AssignmentPattern" ? v.left : v) as ESTree.Identifier).name
+				)
+			];
+			
+			node.body.body.unshift(
+				`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
+				`Oscilloscope.captureArgs(${args.join(", ")});` as any
+			);
+			
+			JsParser.visit(node, {
+				visitReturnStatement(returnPath)
+				{
+					const returnNode = returnPath.node;
+					
+					let printed = "";
+					try 
+					{
+						printed = returnNode.argument 
+							&& (typeof returnNode.argument === "string" ?
+							 returnNode.argument :
+							 JsParser.prettyPrint(returnNode.argument).code 
+							) || "";
+					}
+					catch (e) 
+					{
+						debugger;
+					}
+					
+					const args = ["__Moduless__fId___"];
+					if (printed) 
+						args.push(printed);
+					
+					returnNode.argument = printed.startsWith("Oscilloscope.captureReturn") ? 
+						printed : `Oscilloscope.captureReturn(${args.join(", ")})` as any;
+					
+					return false;
+				}
+			});
+		}
+		
 		/** */
 		private extractCoverFunctions(program: ESTree.Program)
 		{
@@ -208,12 +262,34 @@ namespace Moduless
 			const cFN = this._coverFunctionNames = [] as string[];
 			const cFP = this._coverFunctionPositions = {} as Record<string, ESTree.Position | undefined>;
 			
+			const project = this;
+			
 			JsParser.visit(program, {
+				visitClassDeclaration(path)
+				{
+					const className = path.node.id?.name;
+					JsParser.visit(path.node, {
+						visitMethodDefinition(path)
+						{
+							const methodName = (path.node.key as ESTree.Identifier).name;
+							project.injectOscilloscopeCaptures(path.node.value as any, `${className}.${methodName}`);
+							return false;
+						}
+					})
+					return false;
+				},
+				visitFunctionExpression(path)
+				{
+					project.injectOscilloscopeCaptures(path.node);
+					this.traverse(path);
+				},
 				visitFunctionDeclaration(path)
 				{
 					const node = path.node;
 					const id = node.id;
 					const name = id.name;
+									
+					project.injectOscilloscopeCaptures(node);
 					
 					if (coverFunctionRegex.test(name))
 					{
@@ -332,10 +408,7 @@ namespace Moduless
 				this.sourceMap.destroy();
 				
 			this.sourceMap = sourceMap;
-			
-			if (!code.includes("function " + Constants.prefix))
-				return this._instrumentedCode = code;
-				
+							
 			const program = JsParser.parse(code, {
 				sourceFileName: Path.basename(this.outFile)
 			});

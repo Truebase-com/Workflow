@@ -277,17 +277,17 @@ namespace Moduless
 				if (this.activeBrowser)
 					return resolve();
 				
-				const metrics = GlobalState.browserWindowMetrics;
-				
 				Pup.launch({
 					ignoreHTTPSErrors: true,
 					headless: !GlobalState.isBrowserShown,
 					devtools: GlobalState.isDevtoolsShown,
 					defaultViewport: null,
+					userDataDir: Path.join(GlobalState.globalStoragePath, "./userData"),
+					env: {
+						cwd: GlobalState.globalStoragePath
+					},
 					args: [
 						`--remote-debugging-port=9222`,
-						`--window-size=${metrics.width},${metrics.height}`,
-						`--window-position=${metrics.screenX},${metrics.screenY}`,
 						url
 					]
 				}).then(async browser =>
