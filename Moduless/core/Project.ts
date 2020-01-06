@@ -205,8 +205,7 @@ namespace Moduless
 				import("ast-types").namedTypes.FunctionDeclaration | 
 				import("ast-types").namedTypes.FunctionExpression ,
 			defaultName = "Anonymous"
-		) {	
-			
+		) {
 			const name = `${this.name}:${node.id?.name || defaultName}`;
 			
 			const args = [
@@ -218,10 +217,22 @@ namespace Moduless
 				)
 			];
 			
-			node.body.body.unshift(
-				`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
-				`Oscilloscope.captureArgs(${args.join(", ")});` as any
-			);
+			const functionName = name.split(".");
+			
+			if (functionName.length == 2 && functionName[1] === "constructor")
+			{
+				node.body.body.splice(1, 0,
+					`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
+					`Oscilloscope.captureArgs(${args.join(", ")});` as any
+				);
+			}
+			else 
+			{
+				node.body.body.unshift(
+					`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
+					`Oscilloscope.captureArgs(${args.join(", ")});` as any
+				);
+			}
 			
 			JsParser.visit(node, {
 				visitReturnStatement(returnPath)
