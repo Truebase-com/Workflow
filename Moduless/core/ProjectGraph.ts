@@ -107,6 +107,7 @@ namespace Moduless
 			const project = new Project(
 				tsConfig.name,
 				targetConfigFilePath,
+				targetProjectDir,
 				outFile,
 				scripts,
 				references,
@@ -157,7 +158,7 @@ namespace Moduless
 			if (projectViaConfig)
 				return projectViaConfig;
 			
-			const projectEntries = Array.from(this.projects.entries())
+			const projectEntries = Array.from(this.projects.entries());
 			
 			for (const [path, project] of projectEntries)
 				if (project.outFile === filePath)
@@ -166,14 +167,18 @@ namespace Moduless
 			const ext = Path.extname(filePath);
 			if (ext === ".ts" || ext === ".js")
 			{
-				const inputDir = Path.dirname(filePath) + "/";
-				const projectPaths = projectEntries
+				const fileDir = Path.dirname(filePath) + "/";
+				const projectConfigPaths = projectEntries
 					.map(v => v[0])
 					.sort((a, b) => b.length - a.length);
 				
-				for (const projectPath of projectPaths)
-					if (projectPath.startsWith(inputDir))
-						return this.projects.get(projectPath) || null;
+				for (const projectConfigPath of projectConfigPaths)
+				{
+					const projectConfigDir = Path.dirname(projectConfigPath);
+					
+					if (fileDir.startsWith(projectConfigDir + Path.sep))
+						return this.projects.get(projectConfigPath) || null;
+				}
 			}
 			
 			return null;

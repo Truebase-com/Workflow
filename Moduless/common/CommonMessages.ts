@@ -15,6 +15,17 @@ namespace Moduless
 	}
 	
 	/** */
+	export class ExecuteVoidMessage extends Message
+	{
+		constructor(
+			readonly voidName: string,
+			readonly parameters: any[],
+			readonly context: Record<string, any>
+		)
+		{ super (); }
+	}
+	
+	/** */
 	export class EndCoverMessage extends Message
 	{
 		constructor(
@@ -22,16 +33,6 @@ namespace Moduless
 			 * The name of the cover function that was executed.
 			 */
 			readonly coverName: string,
-			/**
-			 * A string containing any exception message that was generated
-			 * as a result of running the cover.
-			 */
-			readonly exceptionDescription: string,
-			/**
-			 * A string array containing the entries of the stack trace of any
-			 * exception that was generated as a result of running this cover.
-			 */
-			readonly exceptionStack: string[],
 			/**
 			 * 
 			 */
@@ -42,8 +43,24 @@ namespace Moduless
 	/** */
 	export interface IVerificationResult
 	{
+		/**
+		 * 
+		 */
 		readonly expression: string;
+		/**
+		 * 
+		 */
 		readonly pass: boolean;
+		/**
+		 * A string containing any exception message that was generated
+		 * as a result of running the cover.
+		 */
+		readonly exceptionDescription: string,
+		/**
+		 * A string array containing the entries of the stack trace of any
+		 * exception that was generated as a result of running this cover.
+		 */
+		readonly exceptionStack: string[],
 	}
 	
 	/**

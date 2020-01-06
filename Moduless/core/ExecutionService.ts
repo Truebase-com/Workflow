@@ -36,10 +36,11 @@ namespace Moduless
 				const urlParsed = Url.parse(req.url || "");
 				const query = urlParsed.query;
 				const path = urlParsed.path || "";
-				const relatedProject = this.projectGraph.find(path);
 				
 				let mime: string = "";
 				let result: string | Buffer = "";
+				
+				const relatedProject = this.projectGraph.find(path);
 				
 				if (relatedProject)
 				{
@@ -69,7 +70,8 @@ namespace Moduless
 				if (result)
 				{
 					res.writeHead(200, {
-						"Content-Type": mime
+						"Content-Type": mime,
+						"Content-Length": Buffer.byteLength(result)
 					});
 					
 					res.write(result);
@@ -239,7 +241,7 @@ namespace Moduless
 		/** */
 		private async setupPuppeteerListeners()
 		{
-			Vs.debug.onDidTerminateDebugSession(e =>
+			Vs.debug.onDidTerminateDebugSession(() =>
 			{
 				this.stopDebugging();
 			});
@@ -294,6 +296,20 @@ namespace Moduless
 					const pages = await this.activeBrowser.pages();
 					const page = pages[0];
 					this.activePage = page;
+					
+					page.exposeFunction("puppeteerEval", 
+						(contextData: {coverName: string}, args: [string, ...any[]]) => 
+						{
+							const fn = eval(args.shift());
+							const context = {
+								page,
+								fs: Fs,
+								path: Path,
+								...contextData
+							};
+							return fn(context, ...args);
+						});
+					
 					resolve();
 				})
 				.catch(reason =>
@@ -332,7 +348,7 @@ namespace Moduless
 		}
 		
 		private activeBrowser: Pup.Browser | null = null;
-		private activePage: Pup.Page | null = null;
+		public activePage: Pup.Page | null = null;
 		
 		/** */
 		stopDebugging()

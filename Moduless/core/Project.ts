@@ -25,6 +25,8 @@ namespace Moduless
 		project: Project,
 		coverFunctionName: string,
 		index: number) => void;
+		
+	const coverFunctionRegex = new RegExp(`^${Constants.prefix}[A-Z]`);
 	
 	/**
 	 * A "Project" loosely corresponds to a tsconfig.json file.
@@ -46,6 +48,10 @@ namespace Moduless
 			 * .fileName field.
 			 */
 			readonly filePath: string,
+			/**
+			 * 
+			 */
+			readonly projectPath: string,
 			/**
 			 * Stores a fully-qualified version of the outFile value specified
 			 * in the compilerOptions section of the corresponding config file.
@@ -184,140 +190,176 @@ namespace Moduless
 		
 		private sourceMap?: import("source-map").BasicSourceMapConsumer;
 		
+		scriptMap = new WeakMap();
+		
+		/** */
+		private parseScript(script: string)
+		{
+			const ast = JsParser.parse(script);
+			this.scriptMap.set(ast.program, ast);
+			return ast.program;
+		}
+		
+		/** */
+		private extractCoverFunctions(program: ESTree.Program)
+		{
+			const coverFunctions: import("ast-types").namedTypes.FunctionDeclaration[] = [];
+			
+			const cFN = this._coverFunctionNames = [] as string[];
+			const cFP = this._coverFunctionPositions = {} as Record<string, ESTree.Position | undefined>;
+			
+			JsParser.visit(program, {
+				visitFunctionDeclaration(path)
+				{
+					const node = path.node;
+					const id = node.id;
+					const name = id.name;
+					
+					if (coverFunctionRegex.test(name))
+					{
+						coverFunctions.push(node);
+						path.insertAfter(
+							`Moduless.addCover(${name})`
+						);
+						
+						cFN.push(name);
+						cFP[name] = node.loc?.start;
+					}
+					this.traverse(path);
+				}
+			});
+			
+			return coverFunctions;
+		}
+		
+		/** */
+		private extractVoidStrings(nodes: import("ast-types").namedTypes.FunctionDeclaration[])
+		{	
+			const project = this;
+			for (const coverNode of nodes)
+				JsParser.visit(coverNode, {
+					visitUnaryExpression(path)
+					{
+						const node = path.node;
+						const operator = node.operator;
+						const expression = node.argument as ESTree.Literal;
+						if (operator === "void" && expression.type === "Literal")
+						{
+							const parent = path.parent.node as (
+								ESTree.CallExpression |
+								ESTree.ExpressionStatement |
+								ESTree.ArrowFunctionExpression |
+								ESTree.BlockStatement);
+								
+							const contextData = {
+								coverName: coverNode.id?.name,
+								projectPath: project.projectPath
+							};
+						
+							const program = project.parseScript(expression.value as string);
+							const parsed = program.body[0].expression as ESTree.CallExpression;
+							
+							const functionName = (parsed.callee as ESTree.Identifier).name;
+							
+							const awaitExpression = JsBuilder.awaitExpression(
+								JsBuilder.callExpression(
+									JsBuilder.memberExpression(
+										JsBuilder.identifier("VoidStrings"),
+										JsBuilder.identifier("Eval")
+									),
+									[
+										JsBuilder.stringLiteral(JSON.stringify(contextData)),
+										JsBuilder.stringLiteral(functionName),
+										...(parsed.arguments as any[])
+									]
+								)
+							);
+							
+							const fnExpression = JsBuilder.arrowFunctionExpression([
+								JsBuilder.identifier("e")
+							], awaitExpression);
+									
+							switch (parent.type)
+							{
+								case "CallExpression":
+								{
+									((fnExpression.body as ESTree.AwaitExpression)
+										.argument as ESTree.CallExpression)
+										.arguments
+										.push(JsBuilder.identifier("e"));
+										
+									path.replace(fnExpression);
+									break;
+								}
+								case "ExpressionStatement":
+								{
+									path.replace(awaitExpression);
+									break;	
+								}
+								case "ArrowFunctionExpression":
+								{
+									path.replace(awaitExpression.argument as any);
+									break;
+								}
+								case "BlockStatement":
+								{
+									path.replace(awaitExpression);
+									break;
+								}
+								default: 
+									debugger;
+									break;
+							}
+						}
+						this.traverse(path);
+					}
+				});
+		}
+		
 		/**
 		 * Instruments the specified body of source code so that cover functions
 		 * are detected and added to the global cover repository.
 		 */
 		private async updateProjectCode()
 		{
-			const originalCode = Fs.readFileSync(this.outFile, "utf8").toString();
+			const originalCode = Fs.readFileSync(this.outFile).toString();
+			const [ code, sourceMapBase64 ] = originalCode.split("//# sourceMappingURL=data:application/json;base64,");
 			
-			const sourceMapIndex = originalCode.lastIndexOf("\n");
-			const lastLine = originalCode.substr(sourceMapIndex + 1);
-			const [ header, base64 ] = lastLine.split(",");
-			if (header === "//# sourceMappingURL=data:application/json;base64")
-			{
-				try {
-					const parsed = JSON.parse(base64Decode(base64));
-					const sourceMap = await new SourceMap.SourceMapConsumer(parsed);
-					
-					if (this.sourceMap)
-						this.sourceMap.destroy();
-						
-					this.sourceMap = sourceMap;
-				}
-				catch (ex)
-				{
-					console.error(ex);
-				}
-			}
+			const parsedSourceMap = JSON.parse(base64Decode(sourceMapBase64));
+			const sourceMap = await new SourceMap.SourceMapConsumer(parsedSourceMap);
 			
-			if (!originalCode.includes("function " + Constants.prefix))
-				return this._instrumentedCode = originalCode;
+			if (this.sourceMap)
+				this.sourceMap.destroy();
+				
+			this.sourceMap = sourceMap;
 			
-			const program = JsParser.parseScript(originalCode, {
-				/** The flag to allow module code. */
-				module: true,
-				/** The flag to enable stage 3 support (ESNext). */
-				next: true,
-				/** The flag to enable start and end offsets to each node. */
-				ranges: true,
-				/** The flag to enable line/column location information to each node. */
-				loc: true,
-				/** The flag to attach raw property to each literal and identifier node. */
-				raw: true,
-				/** Enabled directives. */
-				directives: true,
-				/** The flag to enable implied strict mode. */
-				impliedStrict: true,
-				/** Enable lexical binding and scope tracking. */
-				lexical: true,
-				/**
-				 * Adds a source attribute in every node’s loc object 
-				 * when the locations option is `true`.
-				 */
-				source: true,
-				/** Distinguish Identifier from IdentifierPattern. */
-				identifierPattern: true
+			if (!code.includes("function " + Constants.prefix))
+				return this._instrumentedCode = code;
+				
+			const program = JsParser.parse(code, {
+				sourceFileName: Path.basename(this.outFile)
 			});
 			
-			const coverFunctions: ESTree.FunctionDeclaration[] = [];
+			const coverFunctions = this.extractCoverFunctions(program);
+			this.extractVoidStrings(coverFunctions);
 			
-			const recurseAst = (node: ESTree.Node) =>
-			{
-				if (!node || typeof node !== "object" || node.constructor !== Object)
-					return;
-				
-				if (node.type === "FunctionDeclaration")
-					if (new RegExp(`^${Constants.prefix}[A-Z]`).test(node.id?.name || ""))
-						coverFunctions.push(node);
-				
-				for (const value of Object.values(node))
-				{
-					if (Array.isArray(value))
-						for (const subNode of value)
-							recurseAst(subNode);
-					
-					else if (typeof value === "object")
-						recurseAst(value);
-				}
-			};
+			const jsCode = JsParser.print(program, {
+				sourceMapName: "map.json"
+			});
 			
-			for (const node of program.body)
-				recurseAst(node);
+			const composedMap = JsParserUtils.composeSourceMaps(parsedSourceMap, jsCode.map);
 			
-			const splits: { 
-				position: number; 
-				functionName: string;
-				functionPosition?: ESTree.Position
-		 	}[] = [];
-			 
-			for (const decl of coverFunctions)
-			{
-				const funcId = decl.id;
-				
-				if (!funcId)
-					continue;
-				
-				splits.push({
-					position: decl.end || originalCode.length,
-					functionName: funcId.name,
-					functionPosition: funcId.loc?.start
-				});
-			}
+			this._instrumentedCode = jsCode.code + 
+				"//# sourceMappingURL=data:application/json;base64," + 
+				base64Encode(JSON.stringify(composedMap));
 			
-			const outChunks: string[] = [];
-			let lastPosition = 0;
-			
-			for (let i = -1; ++i < splits.length;)
-			{
-				const { position, functionName } = splits[i];
-				const sourceChunk = originalCode.slice(lastPosition, position);
-				const injectChunk = `;Moduless.addCover(${functionName});`;
-				outChunks.push(sourceChunk, injectChunk);
-				lastPosition = position;
-			}
-			
-			outChunks.push(originalCode.slice(lastPosition));
-			this._instrumentedCode = outChunks.join("");
-			
-			this._coverFunctionNames = [];
-			this._coverFunctionPositions = {};
-			
-			for (const item of splits)
-			{
-				this._coverFunctionNames.push(item.functionName);
-				this._coverFunctionPositions[item.functionName] = item.functionPosition;
-			}
 		}
 		
 		/** */
 		resolveSymbol(coverFunctionName: string)
 		{
 			const pos = this._coverFunctionPositions[coverFunctionName];
-			if (!pos)
-				return null;
-			
+			if (!pos) return null;
 			const result = this.sourceMap?.originalPositionFor(pos);
 			return result || null;
 		}

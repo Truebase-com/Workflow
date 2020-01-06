@@ -7,7 +7,7 @@
 	"license": "MIT",
 	"version": "2.0.0",
 	"engines": {
-		"vscode": "^1.40.0"
+		"vscode": "^1.41.0"
 	},
 	"repository": {
 		"type": "git",
@@ -28,22 +28,27 @@
 		"vscode:prepublish": "npm run compile",
 		"compile": "tsc -b",
 		"watch": "tsc -b -watch -p ./tsconfig.watch.json",
-		"postinstall": "node ./node_modules/vscode/bin/install",
 		"test": "npm run compile && node ./node_modules/vscode/bin/test",
 		"reload": "vsce package && (code --install-extension moduless-2.0.0.vsix & code-insiders --install-extension moduless-2.0.0.vsix)"
 	},
 	"devDependencies": {
 		"@types/node": "^12.7.12",
 		"@types/puppeteer": "^2.0.0",
-		"@types/vscode": "^1.40.0",
+		"@types/vscode": "^1.41.0",
 		"@types/ws": "^6.0.4",
-		"vscode": "^1.1.36",
 		"typescript": "^3.7.2"
 	},
 	"dependencies": {
+		"@types/astring": "^1.3.0",
+		"astring": "^1.4.3",
 		"meriyah": "^1.9.3",
+		"pixelmatch": "^5.1.0",
+		"pngjs": "^3.4.0",
 		"portchecker": "^0.1.2",
 		"puppeteer": "^2.0.0",
+		"puppeteer-extra": "^3.1.7",
+		"puppeteer-extra-plugin-user-preferences": "^2.2.2",
+		"recast": "^0.18.5",
 		"source-map": "^0.7.3",
 		"ws": "^7.2.0"
 	},
@@ -107,6 +112,16 @@
 				},
 				"category": "Debug",
 				"enablement": "inDebugMode"
+			},
+			{
+				"command": "moduless.snapshot",
+				"title": "Take a snapshot of current window in puppeteer",
+				"icon": {
+					"light": "icons/snapshot-light.svg",
+					"dark": "icons/snapshot-dark.svg"
+				},
+				"category": "Debug",
+				"enablement": "inDebugMode"
 			}
 		],
 		"menus": {
@@ -142,34 +157,9 @@
 					"when": "view == moduless.covers && inDebugMode"
 				}
 			],
-			"touchBar": [
+			"debug/callstack/context": [
 				{
-					"command": "moduless.set-browser-visible",
-					"group": "navigation",
-					"when": "!browserVisible"
-				},
-				{
-					"command": "moduless.set-browser-invisible",
-					"group": "navigation",
-					"when": "browserVisible"
-				},
-				{
-					"command": "moduless.set-devtools-visible",
-					"group": "navigation",
-					"when": "!devtoolsVisible"
-				},
-				{
-					"command": "moduless.set-devtools-invisible",
-					"group": "navigation",
-					"when": "devtoolsVisible"
-				},
-				{
-					"command": "moduless.start",
-					"group": "navigation",
-					"when": "!inDebugMode"
-				},
-				{
-					"command": "moduless.stop",
+					"command": "moduless.snapshot",
 					"group": "navigation",
 					"when": "inDebugMode"
 				}

@@ -224,6 +224,14 @@ namespace Moduless
 		}
 		
 		/**
+		 * Coverts function name to Puppeteer function name
+		 */
+		export function getPuppeteerName(name: string)
+		{
+			return name[0].toUpperCase() + name.substr(1);
+		}
+		
+		/**
 		 * Logs an information message to the console, using a moduless-specific branding.
 		 */
 		export function log(message: string)

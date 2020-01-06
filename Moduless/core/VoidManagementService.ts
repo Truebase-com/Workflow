@@ -2,7 +2,7 @@
 namespace Moduless
 {
 	/**
-	 * A class that deals with detecting void expressions in the active text editor,
+	 * A class that deals with detecting void strings in the active text editor,
 	 * possibly adding the necessary decorators around it, and detecting
 	 * when the caret moves over one so that it can be set as the active.
 	 */
