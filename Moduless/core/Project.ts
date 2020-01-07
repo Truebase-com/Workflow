@@ -221,10 +221,24 @@ namespace Moduless
 			
 			if (functionName.length == 2 && functionName[1] === "constructor")
 			{
-				node.body.body.splice(1, 0,
-					`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
-					`Oscilloscope.captureArgs(${args.join(", ")});` as any
-				);
+				const superIndex = node.body.body
+					.findIndex(v => (v.type === "ExpressionStatement" 
+						&& v.expression.type === "CallExpression" 
+						&& v.expression.callee.type === "Super"));
+					
+				if (superIndex >= 0)
+				{				
+					node.body.body.splice(superIndex + 1, 0, 
+						`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
+						`Oscilloscope.captureArgs(${args.join(", ")});` as any);
+				}
+				else 
+				{
+					node.body.body.unshift(
+						`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
+						`Oscilloscope.captureArgs(${args.join(", ")});` as any
+					);
+				}
 			}
 			else 
 			{
@@ -235,6 +249,10 @@ namespace Moduless
 			}
 			
 			JsParser.visit(node, {
+				visitFunction()
+				{
+					return false;
+				},
 				visitReturnStatement(returnPath)
 				{
 					const returnNode = returnPath.node;
@@ -277,6 +295,19 @@ namespace Moduless
 			
 			JsParser.visit(program, {
 				visitClassDeclaration(path)
+				{
+					const className = path.node.id?.name;
+					JsParser.visit(path.node, {
+						visitMethodDefinition(path)
+						{
+							const methodName = (path.node.key as ESTree.Identifier).name;
+							project.injectOscilloscopeCaptures(path.node.value as any, `${className}.${methodName}`);
+							return false;
+						}
+					})
+					return false;
+				},
+				visitClassExpression(path)
 				{
 					const className = path.node.id?.name;
 					JsParser.visit(path.node, {
