@@ -26,7 +26,12 @@ namespace Moduless
 				projectGraph, bus)
 		});
 		
+		const projectTreeView = Vs.window.createTreeView("moduless.projects", {
+			treeDataProvider: new ProjectTreeProvider(projectGraph, bus)
+		});
+		
 		context.subscriptions.push(treeView);
+		context.subscriptions.push(projectTreeView);
 		context.subscriptions.push(takeSnapshotButton);
 		takeSnapshotButton.hide();
 		
@@ -104,6 +109,11 @@ namespace Moduless
 		registerCommand(Commands.setDevtoolsInvisible, () =>
 		{
 			GlobalState.isDevtoolsShown = false;
+		});
+		
+		registerCommand(Commands.openWebView, (project: Project) => 
+		{
+			WebView.show(project, execSvc.baseUrl);	
 		});
 		
 		const task = new Vs.Task(

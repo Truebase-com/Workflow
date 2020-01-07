@@ -347,6 +347,11 @@ namespace Moduless
 			return `http://localhost:${this.httpPort}/??` + folder;
 		}
 		
+		get baseUrl()
+		{
+			return `http://localhost:${this.httpPort}`;
+		} 
+		
 		private activeBrowser: Pup.Browser | null = null;
 		public activePage: Pup.Page | null = null;
 		

@@ -198,8 +198,12 @@
 		"views": {
 			"test": [
 				{
+					"id": "moduless.projects",
+					"name": "Projects"
+				},
+				{
 					"id": "moduless.covers",
-					"name": "Moduless Cover Functions"
+					"name": "Cover Functions"
 				}
 			]
 		}

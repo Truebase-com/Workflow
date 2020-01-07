@@ -57,6 +57,9 @@ declare module Vs
 	
 	export type StatusBarItem = import("vscode").StatusBarItem;
 	export type StatusBarAlignment = import("vscode").StatusBarAlignment;
+	
+	export type Webview = import("vscode").Webview;
+	export type WebviewPanel = import("vscode").WebviewPanel;
 }
 
 declare module Http
@@ -97,6 +100,7 @@ const enum Commands
 	
 	focusCover = "moduless.focusCover",
 	snapshot = "moduless.snapshot",
+	openWebView = "moduless.openWebView",
 	
 	setBrowserVisible = "moduless.set-browser-visible",
 	setBrowserInvisible = "moduless.set-browser-invisible",

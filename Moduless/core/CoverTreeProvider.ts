@@ -1,7 +1,7 @@
 
 namespace Moduless
 {
-	export type TreeItem = ProjectTreeItem | CoverTreeItem;
+	export type TreeItem = CoverageProjectTreeItem | CoverTreeItem;
 	
 	type VoidableFixture = CoverTreeItem | null | undefined;
 	
@@ -124,7 +124,7 @@ namespace Moduless
 		 */
 		async getChildren(element?: TreeItem): Promise<TreeItem[]>
 		{
-			if (element instanceof ProjectTreeItem)
+			if (element instanceof CoverageProjectTreeItem)
 			{
 				for (const [project, treeItems] of this.ordering)
 					if (project === element.project)
@@ -137,7 +137,7 @@ namespace Moduless
 			const items = projects
 				.filter(v => v.name)
 				.filter(v => this.getCoverTreeItems(v).length > 0)
-				.map(v => new ProjectTreeItem(v));
+				.map(v => new CoverageProjectTreeItem(v));
 			
 			return Promise.resolve(items);
 		}
@@ -154,7 +154,7 @@ namespace Moduless
 	/**
 	 * 
 	 */
-	export class ProjectTreeItem extends Vs.TreeItem
+	export class CoverageProjectTreeItem extends Vs.TreeItem
 	{
 		constructor(readonly project: Project)
 		{
