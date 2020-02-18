@@ -100,6 +100,16 @@
 				"enablement": "!inDebugMode"
 			},
 			{
+				"command": "moduless.startAll",
+				"title": "Start a moduless debugging session & Run all coverage tests",
+				"icon": {
+					"light": "icons/start-light.png",
+					"dark": "icons/start-dark.png"
+				},
+				"category": "Debug",
+				"enablement": "!inDebugMode"
+			},
+			{
 				"command": "moduless.stop",
 				"title": "Stop the moduless debugging session",
 				"icon": {

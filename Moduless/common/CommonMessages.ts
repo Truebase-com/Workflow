@@ -13,6 +13,13 @@ namespace Moduless
 			readonly coverName: string)
 		{ super(); }
 	}
+		/** */
+	export class StartCompleteCoverageMessage extends Message
+	{
+		constructor(
+			readonly containingFilePath: string)
+		{ super(); }
+	}
 	
 	/** */
 	export class ExecuteVoidMessage extends Message

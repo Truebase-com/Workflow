@@ -164,6 +164,19 @@ namespace Moduless
 	/**
 	 * 
 	 */
+	async function handleStartCompleteCoverageMessage()
+	{
+		clearTimeout(autoRunTestOnReload);
+		for (const coverFunctionName in coverRepository)
+		{	
+			const endCoverMessage = await runCover(coverFunctionName);
+			ws.send(endCoverMessage.toString());
+		}
+	}
+	
+	/**
+	 * 
+	 */
 	async function handleExecuteVoidMessage(message: ExecuteVoidMessage)
 	{
 		const result = await (VoidStrings).send(
@@ -178,6 +191,9 @@ namespace Moduless
 		
 		if (message instanceof StartCoverMessage)
 			handleStartCoverMessage(message.coverName);
+			
+		else if (message instanceof StartCompleteCoverageMessage)
+			handleStartCompleteCoverageMessage();
 		
 		else if (message instanceof ReloadMessage)
 			window.location.reload();

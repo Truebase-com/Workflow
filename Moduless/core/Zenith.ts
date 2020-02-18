@@ -59,6 +59,11 @@ namespace Moduless
 			takeSnapshotButton.show();
 		});
 		
+		registerCommand(Commands.startAll, () =>
+		{
+			const selected = GlobalState.selectedCover;
+			bus.emit(new StartCompleteCoverageMessage(selected.containingFile));
+		});
 		
 		registerCommand(Commands.focusCover, async (project: Project, symbol: SourceMap.NullableMappedPosition) =>
 		{

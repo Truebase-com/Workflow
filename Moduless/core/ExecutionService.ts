@@ -246,7 +246,7 @@ namespace Moduless
 				this.stopDebugging();
 			});
 			
-			this.bus.listen(StartCoverMessage, async msg =>
+			const handler = async (msg: StartCompleteCoverageMessage | StartCoverMessage) =>
 			{
 				const project = this.projectGraph.find(msg.containingFilePath);
 				if (!project)
@@ -259,7 +259,10 @@ namespace Moduless
 				
 				await this.maybeStartDebugging(url);
 				this.broadcastViaSocket(msg);
-			});
+			};
+			
+			this.bus.listen(StartCoverMessage, handler);
+			this.bus.listen(StartCompleteCoverageMessage, handler);
 			
 			// We can expose the entire Puppeteer API to the browser 
 			// by looping through the activePage object and adding functions

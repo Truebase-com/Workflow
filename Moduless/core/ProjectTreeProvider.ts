@@ -58,9 +58,9 @@ namespace Moduless
 		get command(): Vs.Command
 		{
 			return {
-				command: Commands.openWebView,
-				arguments: [this.project],
-				title: "Show WebView",
+				command: Commands.startAll,
+				arguments: [this.project.outFile],
+				title: "Start all coverage functions in this project.",
 				tooltip: ""
 			};
 		}

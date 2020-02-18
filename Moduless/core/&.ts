@@ -98,6 +98,8 @@ const enum Commands
 	start = "moduless.start",
 	stop = "moduless.stop",
 	
+	startAll = "moduless.startAll",
+	
 	focusCover = "moduless.focusCover",
 	snapshot = "moduless.snapshot",
 	openWebView = "moduless.openWebView",
