@@ -206,6 +206,8 @@ namespace Moduless
 				import("ast-types").namedTypes.FunctionExpression ,
 			defaultName = "Anonymous"
 		) {
+			return;
+			
 			const name = `${this.name}:${node.id?.name || defaultName}`;
 			
 			const args = [
@@ -361,7 +363,7 @@ namespace Moduless
 						const node = path.node;
 						const operator = node.operator;
 						const expression = node.argument as ESTree.Literal;
-						if (operator === "void" && expression.type === "Literal")
+						if (operator === "void" && expression.type === "Literal" && typeof expression.value === "string")
 						{
 							const parent = path.parent.node as (
 								ESTree.CallExpression |
@@ -376,7 +378,7 @@ namespace Moduless
 						
 							const program = project.parseScript(expression.value as string);
 							const parsed = program.body[0].expression as ESTree.CallExpression;
-							
+														
 							const functionName = (parsed.callee as ESTree.Identifier).name;
 							
 							const awaitExpression = JsBuilder.awaitExpression(

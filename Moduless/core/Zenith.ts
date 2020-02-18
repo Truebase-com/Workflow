@@ -120,7 +120,10 @@ namespace Moduless
 			{ type: 'typescript', task: 'compile' },
 			'compile',
 			'typescript',
-			new Vs.ShellExecution('tsc -b -w'));
+			new Vs.ShellExecution('tsc -b -w'),
+			"$tsc");
+			
+		task.isBackground = true;
 		
 		if (task)
 			await Vs.tasks.executeTask(task);
