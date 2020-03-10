@@ -65,11 +65,15 @@ namespace Moduless
 			bus.emit(new StartCompleteCoverageMessage(selected.containingFile));
 		});
 		
-		registerCommand(Commands.focusCover, async (project: Project, symbol: SourceMap.NullableMappedPosition) =>
+		registerCommand(
+			Commands.focusCover,
+			async (project: Project, symbol: SourceMap.NullableMappedPosition) =>
 		{
-			if (!symbol.source) return;
+			if (!symbol.source)
+				return;
 			
-			const editor = await Vs.window.showTextDocument(Vs.Uri.file(Path.join(project.folder, symbol.source)));
+			const fileUri = Vs.Uri.file(Path.join(project.folder, symbol.source));
+			const editor = await Vs.window.showTextDocument(fileUri);
 			const pos = new Vs.Position(symbol.line || 0, symbol.column || 0);
 			editor.revealRange(new Vs.Range(pos, pos), Vs.TextEditorRevealType.InCenter);
 			editor.selection = new Vs.Selection(pos, pos);
@@ -77,16 +81,21 @@ namespace Moduless
 		
 		registerCommand(Commands.snapshot, async () =>
 		{	
-			const project = projectGraph.find(GlobalState.selectedCover.containingFile);
-			
-			if (!execSvc.activePage || !project) 
+			if (!execSvc.activePage)
 				return;
 			
-			const PNG = require('pngjs').PNG;
-			const ss = PNG.sync.read(await execSvc.activePage.screenshot());
-			await Fs.promises.writeFile(
-				Path.join(project.projectPath, "../captures", `${GlobalState.selectedCover.coverFunctionName}.png`)
-			, PNG.sync.write(ss));
+			const project = projectGraph.find(GlobalState.selectedCover.containingFile);
+			if (!project)
+				return;
+			
+			const png = require("pngjs").PNG;
+			const ss = png.sync.read(await execSvc.activePage.screenshot());
+			const path = Path.join(
+				project.projectPath,
+				"../captures",
+				`${GlobalState.selectedCover.coverFunctionName}.png`);
+			
+			await Fs.promises.writeFile(path, png.sync.write(ss));
 		});
 		
 		registerCommand(Commands.stop, () =>
@@ -121,18 +130,6 @@ namespace Moduless
 			WebView.show(project, execSvc.baseUrl);	
 		});
 		
-		const task = new Vs.Task(
-			{ type: 'typescript', task: 'compile' },
-			'compile',
-			'typescript',
-			new Vs.ShellExecution('tsc -b -w'),
-			"$tsc");
-			
-		task.isBackground = true;
-		
-		if (task)
-			await Vs.tasks.executeTask(task);
-		
 		bus.emit(new InitializeMessage());
 	}
 	
@@ -146,7 +143,6 @@ namespace Moduless
 		for (const disposable of disposables)
 			disposable.dispose();
 	}
-	
 	
 	exports.activate = activate;
 	exports.deactivate = deactivate;

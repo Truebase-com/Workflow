@@ -229,7 +229,7 @@ namespace Moduless
 						&& v.expression.callee.type === "Super"));
 					
 				if (superIndex >= 0)
-				{				
+				{
 					node.body.body.splice(superIndex + 1, 0, 
 						`const __Moduless__fId___ = Oscilloscope.nextId();` as any,
 						`Oscilloscope.captureArgs(${args.join(", ")});` as any);
@@ -378,7 +378,6 @@ namespace Moduless
 						
 							const program = project.parseScript(expression.value as string);
 							const parsed = program.body[0].expression as ESTree.CallExpression;
-														
 							const functionName = (parsed.callee as ESTree.Identifier).name;
 							
 							const awaitExpression = JsBuilder.awaitExpression(
@@ -443,10 +442,18 @@ namespace Moduless
 		private async updateProjectCode()
 		{
 			const originalCode = Fs.readFileSync(this.outFile).toString();
-			const [ code, sourceMapBase64 ] = originalCode.split("//# sourceMappingURL=data:application/json;base64,");
+			const [code, sourceMapBase64] = originalCode.split("//# sourceMappingURL=data:application/json;base64,");
 			
-			const parsedSourceMap = JSON.parse(base64Decode(sourceMapBase64));
-			const sourceMap = await new SourceMap.SourceMapConsumer(parsedSourceMap);
+			const jsonText = Util.base64Decode(sourceMapBase64);
+			const parsedSourceMap = Util.parseJsonText(jsonText);
+			
+			if (Object.keys(parsedSourceMap).length === 0)
+			{
+				console.log(jsonText);
+				return;
+			}
+			
+			const sourceMap = await new SourceMap.SourceMapConsumer(parsedSourceMap as any);
 			
 			if (this.sourceMap)
 				this.sourceMap.destroy();
@@ -468,15 +475,16 @@ namespace Moduless
 			
 			this._instrumentedCode = jsCode.code + 
 				"//# sourceMappingURL=data:application/json;base64," + 
-				base64Encode(JSON.stringify(composedMap));
-			
+				Util.base64Encode(JSON.stringify(composedMap));
 		}
 		
 		/** */
 		resolveSymbol(coverFunctionName: string)
 		{
 			const pos = this._coverFunctionPositions[coverFunctionName];
-			if (!pos) return null;
+			if (!pos)
+				return null;
+			
 			const result = this.sourceMap?.originalPositionFor(pos);
 			return result || null;
 		}

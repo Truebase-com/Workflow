@@ -124,10 +124,13 @@ namespace Moduless
 				
 				if (v === true)
 					return i;
-				else if (v === false)
+				
+				if (v === false)
 					reverse ? i-- : i++;
+				
 				else if (typeof v === "number")
 					i = v;
+				
 				else 
 					return undefined;
 			}
@@ -260,5 +263,13 @@ namespace Moduless
 			const contentCss = "background: transparent; color: inherit";
 			console.warn("%cModuless%c\n" + message, titleCss, contentCss);
 		}
+		
+		export const base64Decode = typeof atob === "undefined" ? 
+			((v: string) => Buffer.from(v, "base64").toString("binary")) :
+			atob;
+	
+		export const base64Encode = typeof btoa === "undefined" ?
+			((v: string) => Buffer.from(v, "binary").toString("base64")) :
+			btoa;
 	}
 }

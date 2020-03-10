@@ -78,22 +78,18 @@ namespace Moduless
 		}
 		else if (value instanceof Array)
 		{
-			verifications.push(...(
-				await Promise.all(
-					value
-					.map(async v => 
-						await processCoverReturn(v)
-					)))
-				.flat()
-			);
+			const promises = value.map(async v => await processCoverReturn(v));
+			const verificationResults = await Promise.all(promises);
+			verifications.push(...verificationResults.flat());
 		}		
 		else if (value instanceof Function)
 		{
 			const newValue = await value();
 			const newName = String(value)
-												.trim()
-												.replace(verifierReg, "")
-												.trim();;
+				.trim()
+				.replace(verifierReg, "")
+				.trim();
+			
 			const error = new Error(`Verifier function returned an unexpected ${typeof newValue}(${newValue})`);
 			verifications.push({
 				expression: newName,

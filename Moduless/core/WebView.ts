@@ -1,17 +1,25 @@
 
 namespace Moduless
 {
+	/**
+	 * 
+	 */
 	export class WebView
 	{
+		/** */
 		static view?: WebView;
 		
+		/**
+		 * 
+		 */
 		static show(project: Project, baseUrl: string)
 		{
 			const column = 
 				Vs.window.activeTextEditor?.viewColumn 
 				|| Vs.ViewColumn.One;
-
-			if (WebView.view) {
+			
+			if (WebView.view)
+			{
 				WebView.view.panel.reveal(column);
 				return;
 			}
@@ -24,29 +32,32 @@ namespace Moduless
 					enableScripts: true
 				}
 			);
-
+			
 			WebView.view = new WebView(panel, project, baseUrl);
 		}
 		
-		private disposables: Vs.Disposable[] = [];
+		private readonly disposables: Vs.Disposable[] = [];
 		private readonly standardFiles = {
 			common: "moduless.common.js",
 			tunnel: "moduless.tunnel.js"
 		};
 		
+		/** */
 		constructor(
-			public panel: Vs.WebviewPanel, 
-			private project: Project, 
-			private baseUrl: string)
+			readonly panel: Vs.WebviewPanel, 
+			private readonly project: Project, 
+			private readonly baseUrl: string)
 		{
 			this.panel.onDidDispose(() => this.dispose(), null, this.disposables);
 			this.panel.webview.html = this.getHtml(project);
 		}
 		
-		public dispose() {
+		/** */
+		public dispose() 
+		{
 			WebView.view = undefined;
 			this.panel.dispose();
-
+			
 			for (
 				let disposable = this.disposables.pop(); 
 				disposable = this.disposables.pop();)
@@ -74,6 +85,5 @@ namespace Moduless
 				</html>
 				`;
 		}
-		
 	}
 }

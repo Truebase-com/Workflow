@@ -1,18 +1,25 @@
 
 namespace Moduless
 {	
+	/** */
 	type VoidableFixture = ProjectTreeItem | null | undefined;
+	
 	/** */
 	export class ProjectTreeProvider implements Vs.TreeDataProvider<ProjectTreeItem>
 	{
+		/** */
 		get onDidChangeTreeData()
 		{
 			return this.innerEvent.event;
 		}
 		
+		/** */
 		private readonly innerEvent = new Vs.EventEmitter<VoidableFixture>();
-		private items: ProjectTreeItem[] = [];
 		
+		/** */
+		private readonly items: ProjectTreeItem[] = [];
+		
+		/** */
 		constructor(
 			private readonly projectGraph: ProjectGraph,
 			readonly bus: MessageBus)
@@ -25,11 +32,13 @@ namespace Moduless
 			});
 		}
 		
+		/** */
 		getTreeItem(element: ProjectTreeItem)
 		{
 			return element;
 		}
 		
+		/** */
 		async getChildren(element?: ProjectTreeItem)
 		{
 			if (element instanceof ProjectTreeItem)
@@ -49,12 +58,14 @@ namespace Moduless
 	 */
 	export class ProjectTreeItem extends Vs.TreeItem
 	{
+		/** */
 		constructor(readonly project: Project)
 		{
 			super(project.name || "???", Vs.TreeItemCollapsibleState.None);
 			this.id = project.outFile;
 		}
 		
+		/** */
 		get command(): Vs.Command
 		{
 			return {

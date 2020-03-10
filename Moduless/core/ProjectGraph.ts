@@ -13,7 +13,7 @@ namespace Moduless
 			if (!rootPath)
 				return new ProjectGraph([], bus);
 			
-			const files = await Vs.workspace.findFiles("tsconfig*.json");
+			const files = await Vs.workspace.findFiles("tsconfig.json");
 			return new ProjectGraph(files, bus);
 		}
 		
