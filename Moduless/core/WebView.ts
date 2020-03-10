@@ -15,8 +15,8 @@ namespace Moduless
 		static show(project: Project, baseUrl: string)
 		{
 			const column = 
-				Vs.window.activeTextEditor?.viewColumn 
-				|| Vs.ViewColumn.One;
+				Vs.window.activeTextEditor?.viewColumn ||
+				Vs.ViewColumn.One;
 			
 			if (WebView.view)
 			{
