@@ -11,6 +11,14 @@ namespace Moduless
 	 */
 	async function activate(context: Vs.ExtensionContext)
 	{
+		if (
+			!Fs.existsSync("tsconfig.json") ||
+			!Array.isArray(Util.parseConfigFile("tsconfig.json").moduless)
+		) {
+			deactivate();
+			return;
+		}
+		
 		const bus = new MessageBus();
 		GlobalState.init(context.globalStoragePath, bus);
 		const projectGraph = await ProjectGraph.new(bus);
